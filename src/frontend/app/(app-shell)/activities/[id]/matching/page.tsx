@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 export default function MatchingPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { phase, progress, result, error, start } = useMatching(id);
+  const { phase, progress, result, error, start, matchStats } = useMatching(id);
 
   return (
     <div className="space-y-6">
@@ -21,7 +21,7 @@ export default function MatchingPage() {
         </p>
       </div>
 
-      <MatchingVisualization phase={phase} progress={progress} result={result} />
+      <MatchingVisualization phase={phase} progress={progress} result={result} matchStats={matchStats} />
 
       {error && <p className="text-sm text-destructive text-center">{error}</p>}
 

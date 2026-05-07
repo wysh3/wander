@@ -17,6 +17,7 @@ export const BANGALORE_AREAS = [
   "HSR Layout",
   "Electronic City",
   "Yelahanka",
+  "Devanahalli",
   "Nandi Hills",
   "Cubbon Park",
 ] as const;

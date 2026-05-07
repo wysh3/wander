@@ -41,6 +41,12 @@ async def _match_redis_get(key: str) -> dict | None:
 
 async def _run_matching_task(match_key: str, activity_id: uuid.UUID):
     from app.db.session import async_session_factory
+    from app.services.geolocation import haversine_km as geo_haversine
+    from app.services.nearby_users import (
+        fetch_active_users_within_radius,
+        filter_by_travel_time,
+    )
+
     async with async_session_factory() as db:
         try:
             result = await db.execute(select(Activity).where(Activity.id == activity_id))
@@ -49,42 +55,118 @@ async def _run_matching_task(match_key: str, activity_id: uuid.UUID):
                 await _match_redis_set(match_key, {"status": "failed", "error": "Activity not found"})
                 return
 
-            users_result = await db.execute(
-                select(User).where(
-                    User.personality_vector.isnot(None),
-                    User.onboarding_completed == True,
-                )
-            )
-            users = list(users_result.scalars().all())
-
             match_data = await _match_redis_get(match_key) or {}
             match_user_id = match_data.get("current_user_id")
+
+            # --- PHASE 1: Fetch the requesting user first ---
+            current_user = None
             if match_user_id:
                 current_user = await db.get(User, uuid.UUID(match_user_id))
-                if current_user:
-                    current_user_in_pool = any(u.id == current_user.id for u in users)
-                    if not current_user_in_pool:
-                        users.insert(0, current_user)
 
-            users = users[:20]
+            # Determine geo-center: use activity location, or current user's live location
+            center_lat = None
+            center_lng = None
+            search_radius_km = 20.0
 
             if activity.lat and activity.lng:
-                import math
-                def haversine_km(lat1, lng1, lat2, lng2):
-                    R = 6371
-                    dlat = math.radians(lat2 - lat1)
-                    dlng = math.radians(lng2 - lng1)
-                    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlng/2)**2
-                    return R * 2 * math.asin(math.sqrt(a))
+                center_lat = float(activity.lat)
+                center_lng = float(activity.lng)
+            elif current_user and current_user.live_lat and current_user.live_lng:
+                center_lat = float(current_user.live_lat)
+                center_lng = float(current_user.live_lng)
 
-                location_filtered = [u for u in users if u.home_lat and u.home_lng and
-                         haversine_km(float(activity.lat), float(activity.lng), float(u.home_lat), float(u.home_lng)) <= 20.0]
-                if location_filtered:
-                    users = location_filtered
+            if current_user:
+                search_radius_km = float(current_user.preferred_radius_km or 20)
+
+            await _match_redis_set(match_key, {
+                "status": "running",
+                "progress": 5,
+                "phase": "geo_filtering",
+                "current_user_id": match_user_id,
+            })
+
+            # --- PHASE 2: Geo-filtered user acquisition ---
+            if center_lat is not None and center_lng is not None:
+                # Use live GPS + PostGIS for hyperlocal matching
+                users = await fetch_active_users_within_radius(
+                    db=db,
+                    origin_lat=center_lat,
+                    origin_lng=center_lng,
+                    radius_km=search_radius_km,
+                    user_id_to_exclude=match_user_id,
+                    limit=100,
+                    activity_cutoff_minutes=30,
+                )
+                geo_method = "postgis_live_gps"
+            else:
+                # Fallback: fetch users by home location proximity
+                users_result = await db.execute(
+                    select(User).where(
+                        User.personality_vector.isnot(None),
+                        User.onboarding_completed == True,
+                    )
+                )
+                users = list(users_result.scalars().all())
+
+                if center_lat and center_lng:
+                    users = [
+                        u
+                        for u in users
+                        if u.home_lat
+                        and u.home_lng
+                        and geo_haversine(
+                            center_lat, center_lng, float(u.home_lat), float(u.home_lng)
+                        )
+                        <= search_radius_km
+                    ]
+                geo_method = "home_haversine"
+
+            # Insert current user at front if not already in pool
+            if current_user:
+                current_user_in_pool = any(u.id == current_user.id for u in users)
+                if not current_user_in_pool:
+                    users.insert(0, current_user)
 
             if not users:
-                await _match_redis_set(match_key, {"status": "failed", "error": "No users available for matching"})
+                await _match_redis_set(match_key, {
+                    "status": "failed",
+                    "error": "No nearby users available. Try increasing your search radius.",
+                })
                 return
+
+            await _match_redis_set(match_key, {
+                "status": "running",
+                "progress": 15,
+                "phase": "geo_filtering",
+                "total_users": len(users),
+                "geo_method": geo_method,
+                "search_radius_km": search_radius_km,
+                "current_user_id": match_user_id,
+            })
+
+            # --- PHASE 3: Travel-time feasibility check ---
+            travel_time_users = users
+            if center_lat is not None and center_lng is not None and len(users) > 1:
+                travel_time_users = await filter_by_travel_time(
+                    origin_lat=center_lat,
+                    origin_lng=center_lng,
+                    users=users,
+                    max_travel_minutes=30.0,
+                )
+                if travel_time_users:
+                    users = travel_time_users
+                # If all filtered out, keep original pool (graceful degradation)
+
+            # Limit pool size for solver performance
+            users = users[:50]
+
+            await _match_redis_set(match_key, {
+                "status": "running",
+                "progress": 25,
+                "phase": "constraints",
+                "total_users": len(users),
+                "current_user_id": match_user_id,
+            })
 
             history_result = await db.execute(select(UserHistory))
             history_records = history_result.scalars().all()
@@ -211,6 +293,7 @@ async def get_match_status(
         status=status_data.get("status", "idle"),
         progress=status_data.get("progress", 0),
         total_users=status_data.get("total_users", 0),
+        phase=status_data.get("phase"),
     )
 
 

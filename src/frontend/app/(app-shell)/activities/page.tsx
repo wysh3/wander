@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CategoryFilter } from "@/components/activities/category-filter";
 import { ActivityFeed } from "@/components/activities/activity-feed";
+import { RadiusSelector, NearbyCountBadge } from "@/components/location/radius-selector";
 import { Compass } from "lucide-react";
 
 export default function ActivitiesPage() {
@@ -16,6 +17,12 @@ export default function ActivitiesPage() {
           <h1 className="text-2xl font-bold">Discover</h1>
           <p className="text-sm text-muted-foreground">No algorithm feed. No infinite scroll. Pick something real.</p>
         </div>
+        <div className="ml-auto">
+          <NearbyCountBadge />
+        </div>
+      </div>
+      <div className="bg-card border rounded-xl p-4">
+        <RadiusSelector />
       </div>
       <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
       <ActivityFeed category={selectedCategory} />

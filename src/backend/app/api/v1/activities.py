@@ -4,12 +4,14 @@ from sqlalchemy import select, func
 import uuid
 import base64
 import json
+import math
 
 from app.api.deps import get_db, get_current_user
 from app.models.activity import Activity
 from app.models.user import User
 from app.schemas.activity import ActivityResponse, ActivityListParams, JoinActivityResponse
 from app.schemas.common import PaginatedResponse
+from app.services.geolocation import haversine_km
 
 router = APIRouter()
 
@@ -20,9 +22,17 @@ async def list_activities(
     area: str | None = Query(None),
     date: str | None = Query(None),
     cursor: str | None = Query(None),
-    limit: int = Query(10, ge=1, le=50),
+    limit: int = Query(20, ge=1, le=50),
+    lat: float | None = Query(None, description="User's latitude for distance-aware sorting"),
+    lng: float | None = Query(None, description="User's longitude for distance-aware sorting"),
+    radius_km: float | None = Query(None, ge=1, le=100, description="Max distance radius filter"),
+    sort_by: str = Query("distance", regex="^(distance|date)$"),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    List open activities. When lat/lng is provided, computes distance
+    from user and sorts by nearest first. Optionally filters by radius.
+    """
     query = select(Activity).where(Activity.status == "open")
 
     if category:
@@ -32,21 +42,81 @@ async def list_activities(
     if cursor:
         decoded = base64.b64decode(cursor).decode()
         cursor_data = json.loads(decoded)
-        query = query.where(Activity.created_at < cursor_data["created_at"])
+        if "created_at" in cursor_data:
+            query = query.where(Activity.created_at < cursor_data["created_at"])
+        elif "distance" in cursor_data and "id" in cursor_data:
+            # Cursor-based pagination for distance-sorted results
+            query = query.where(
+                (Activity.id != cursor_data["id"])  # Just offset marker
+            )
 
-    query = query.order_by(Activity.scheduled_at.asc()).limit(limit + 1)
+    query = query.order_by(Activity.scheduled_at.asc())
     result = await db.execute(query)
-    activities = result.scalars().all()
+    activities = list(result.scalars().all())
 
-    has_more = len(activities) > limit
+    # Compute distance for each activity if user coordinates provided
+    user_has_location = lat is not None and lng is not None
+    if user_has_location:
+        for activity in activities:
+            if activity.lat is not None and activity.lng is not None:
+                activity_distance = haversine_km(
+                    lat, lng, float(activity.lat), float(activity.lng)
+                )
+                # Store distance as a transient attribute for sorting
+                activity._distance_km = round(activity_distance, 2)
+            else:
+                activity._distance_km = None
+
+        # Filter by radius
+        if radius_km is not None:
+            activities = [
+                a for a in activities
+                if a._distance_km is not None and a._distance_km <= radius_km
+            ]
+
+        # Sort by distance (nulls last, then nearest first)
+        if sort_by == "distance":
+            activities.sort(key=lambda a: (
+                a._distance_km is None,
+                a._distance_km or 999999,
+            ))
+        else:
+            # Sort by date but keep distance annotation
+            activities.sort(key=lambda a: a.scheduled_at)
+    else:
+        for activity in activities:
+            activity._distance_km = None
+
+    # Paginate
+    total = len(activities)
+    has_more = total > limit
     items = activities[:limit]
+
     next_cursor = None
     if has_more:
-        cursor_data = json.dumps({"created_at": str(items[-1].created_at)})
-        next_cursor = base64.b64encode(cursor_data.encode()).decode()
+        cursor_data = {}
+        if sort_by == "distance" and items:
+            last = items[-1]
+            cursor_data = {
+                "id": str(last.id),
+                "distance": last._distance_km,
+                "created_at": str(last.created_at),
+            }
+        elif items:
+            cursor_data = {"created_at": str(items[-1].created_at)}
+        next_cursor = base64.b64encode(json.dumps(cursor_data).encode()).decode()
+
+    # Build response with distance
+    response_items = []
+    for a in items:
+        # Validate from ORM object — Pydantic v2 uses from_attributes=True
+        item = ActivityResponse.model_validate(a)
+        # Inject computed distance
+        item.distance_km = getattr(a, "_distance_km", None)
+        response_items.append(item)
 
     return PaginatedResponse(
-        items=[ActivityResponse.model_validate(a) for a in items],
+        items=response_items,
         next_cursor=next_cursor,
     )
 
