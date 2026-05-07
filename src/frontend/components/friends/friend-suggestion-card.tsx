@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/ca
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { apiFetch } from "@/lib/api-client";
 
 interface SuggestionUser {
   id: string;
@@ -96,13 +97,8 @@ export function FriendSuggestionCard({
           size="sm"
           className="mt-3 w-full"
           onClick={() => {
-            fetch(`/api/v1/friends/request/${user.id}`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("wander-auth") ? JSON.parse(localStorage.getItem("wander-auth")!).state?.accessToken : ""}`,
-              },
-            }).then(() => onConnect?.());
+            apiFetch(`/friends/request/${user.id}`, { method: "POST" })
+              .then(() => onConnect?.());
           }}
         >
           <HeartHandshake className="h-3.5 w-3.5 mr-1" />

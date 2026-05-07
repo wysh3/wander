@@ -16,7 +16,7 @@ export default function CommunitiesPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["communities", "list"],
-    queryFn: () => apiFetch<{ items: CommunityItem[]; next_cursor: string | null }>("/api/v1/communities?limit=20"),
+    queryFn: () => apiFetch<{ items: CommunityItem[]; next_cursor: string | null }>("/communities?limit=20"),
   });
 
   if (isLoading) {

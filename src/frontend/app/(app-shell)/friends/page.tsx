@@ -15,19 +15,19 @@ export default function FriendsPage() {
 
   const { data: suggestions, isLoading: loadingSuggestions } = useQuery({
     queryKey: ["friends", "suggestions"],
-    queryFn: () => apiFetch<Suggestion[]>(`/api/v1/friends/suggestions?limit=10`),
+    queryFn: () => apiFetch<Suggestion[]>(`/friends/suggestions?limit=10`),
     staleTime: 60000,
   });
 
   const { data: friends, isLoading: loadingFriends } = useQuery({
     queryKey: ["friends", "list"],
-    queryFn: () => apiFetch<FriendItem[]>(`/api/v1/friends`),
+    queryFn: () => apiFetch<FriendItem[]>(`/friends`),
     enabled: tab === "friends",
   });
 
   const { data: requests, isLoading: loadingRequests } = useQuery({
     queryKey: ["friends", "requests"],
-    queryFn: () => apiFetch<RequestItem[]>(`/api/v1/friends/requests`),
+    queryFn: () => apiFetch<RequestItem[]>(`/friends/requests`),
     enabled: tab === "requests",
   });
 

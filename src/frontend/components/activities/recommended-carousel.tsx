@@ -33,7 +33,7 @@ interface RecommendedActivity {
 export function RecommendedCarousel() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["recommendations", "user"],
-    queryFn: () => apiFetch<RecommendedActivity[]>("/api/v1/activities/recommended?limit=5"),
+    queryFn: () => apiFetch<RecommendedActivity[]>("/activities/recommended?limit=5"),
     staleTime: 120000,
     retry: 1,
   });

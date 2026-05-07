@@ -17,17 +17,17 @@ export default function CommunityDetailPage() {
 
   const { data: community, isLoading } = useQuery({
     queryKey: ["communities", "detail", params.id],
-    queryFn: () => apiFetch<CommunityDetail>(`/api/v1/communities/${params.id}`),
+    queryFn: () => apiFetch<CommunityDetail>(`/communities/${params.id}`),
   });
 
   const { data: members } = useQuery({
     queryKey: ["communities", "members", params.id],
-    queryFn: () => apiFetch<MemberItem[]>(`/api/v1/communities/${params.id}/members`),
+    queryFn: () => apiFetch<MemberItem[]>(`/communities/${params.id}/members`),
     enabled: !!community,
   });
 
   const joinMutation = useMutation({
-    mutationFn: () => apiFetch(`/api/v1/communities/${params.id}/join`, { method: "POST" }),
+    mutationFn: () => apiFetch(`/communities/${params.id}/join`, { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["communities", "detail", params.id] });
       queryClient.invalidateQueries({ queryKey: ["communities", "members", params.id] });
@@ -36,7 +36,7 @@ export default function CommunityDetailPage() {
   });
 
   const leaveMutation = useMutation({
-    mutationFn: () => apiFetch(`/api/v1/communities/${params.id}/leave`, { method: "POST" }),
+    mutationFn: () => apiFetch(`/communities/${params.id}/leave`, { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["communities", "detail", params.id] });
       queryClient.invalidateQueries({ queryKey: ["communities", "members", params.id] });

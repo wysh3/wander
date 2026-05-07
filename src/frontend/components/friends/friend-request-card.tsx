@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { apiFetch } from "@/lib/api-client";
 
 interface RequestUser {
   id: string;
@@ -33,28 +34,12 @@ export function FriendRequestCard({
     : null;
 
   const handleAccept = async () => {
-    const token = localStorage.getItem("wander-auth");
-    const accessToken = token ? JSON.parse(token).state?.accessToken : "";
-    await fetch(`/api/v1/friends/accept/${id}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    await apiFetch(`/friends/accept/${id}`, { method: "POST" });
     onHandled?.();
   };
 
   const handleReject = async () => {
-    const token = localStorage.getItem("wander-auth");
-    const accessToken = token ? JSON.parse(token).state?.accessToken : "";
-    await fetch(`/api/v1/friends/reject/${id}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    await apiFetch(`/friends/reject/${id}`, { method: "POST" });
     onHandled?.();
   };
 
