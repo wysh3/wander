@@ -108,7 +108,7 @@ async def social_proof(user: User, activity: Activity, db: AsyncSession) -> floa
             select(User.personality_vector).where(User.id == member_id)
         )
         mpv = m_result.scalar_one_or_none()
-        if mpv and len(mpv) == 5:
+        if mpv is not None and len(mpv) == 5:
             dist = 1.0 - cosine_similarity_vecs(pv, list(mpv))
             if dist <= threshold:
                 similar_count += 1
