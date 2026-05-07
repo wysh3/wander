@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Users, BarChart3, ShieldAlert, Globe, HeartHandshake, Sparkles, User, ChevronRight, ShieldCheck } from "lucide-react";
+import { Compass, Users, BarChart3, ShieldAlert, Globe, HeartHandshake, Sparkles, User, ChevronRight, ShieldCheck, Heart, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -59,38 +59,20 @@ export function DesktopSidebar() {
           })}
         </div>
 
-        {/* Preferences Section */}
+        {/* Women Only Mode Section */}
         <div className="pt-2 border-t border-gray-50 mt-4">
-          <p className="px-4 text-[10px] font-bold text-[#1e3a5f]/30 uppercase tracking-[0.2em] mb-2">Matching Preferences</p>
-          <div className="space-y-1">
-            <button className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-gray-50 text-left group">
-              <div className="flex items-center gap-3">
-                <Heart className="w-4 h-4 text-rose-400" />
-                <span className="text-sm font-semibold text-[#1e3a5f]/70 group-hover:text-[#1e3a5f]">Based on Interests</span>
-              </div>
-              <div className="w-4 h-4 rounded-full border-2 border-[#2cb1bc] bg-[#2cb1bc] flex items-center justify-center">
-                <div className="w-1.5 h-1.5 rounded-full bg-white" />
-              </div>
-            </button>
-            
-            <button className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-gray-50 text-left group">
-              <div className="flex items-center gap-3">
-                <Flame className="w-4 h-4 text-orange-400" />
-                <span className="text-sm font-semibold text-[#1e3a5f]/70 group-hover:text-[#1e3a5f]">Random Thrill</span>
-              </div>
-              <div className="w-4 h-4 rounded-full border-2 border-gray-200" />
-            </button>
-
-            <button className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-gray-50 text-left group">
-              <div className="flex items-center gap-3">
-                <Sparkles className="w-4 h-4 text-purple-400" />
-                <span className="text-sm font-semibold text-[#1e3a5f]/70 group-hover:text-[#1e3a5f]">Women-Only Mode</span>
-              </div>
-              <div className="w-8 h-4 rounded-full bg-gray-200 relative">
-                <div className="absolute left-0.5 top-0.5 w-3 h-3 rounded-full bg-white shadow-sm" />
-              </div>
-            </button>
-          </div>
+          <Link
+            href="/women-only"
+            className={cn(
+              "flex items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all",
+              pathname.startsWith("/women-only")
+                ? "bg-purple-50 text-purple-600 border border-purple-100"
+                : "text-[#1e3a5f]/60 hover:bg-purple-50/50 hover:text-purple-500"
+            )}
+          >
+            <Sparkles className={cn("h-5 w-5", pathname.startsWith("/women-only") ? "text-purple-500" : "text-purple-400/70")} />
+            Women-Only Mode
+          </Link>
         </div>
 
         {isAdmin && (
