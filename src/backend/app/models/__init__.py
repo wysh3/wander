@@ -6,6 +6,8 @@ from app.models.chat_message import ChatMessage
 from app.models.sos_event import SOSEvent
 from app.models.host import Host
 from app.models.user_history import UserHistory
+from app.models.friend_connection import FriendConnection
+from app.models.user_block import UserBlock
 
 __all__ = [
     "User",
@@ -17,4 +19,6 @@ __all__ = [
     "SOSEvent",
     "Host",
     "UserHistory",
+    "FriendConnection",
+    "UserBlock",
 ]

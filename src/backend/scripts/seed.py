@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from app.models import User, Host, Activity, Group, GroupMember, Venue
+from app.models import User, Host, Activity, Group, GroupMember, Venue, FriendConnection
 from app.config import get_settings
 
 settings = get_settings()
@@ -223,6 +223,15 @@ async def seed():
         priya.streak_weeks = 4
         priya.screen_time_before = 300
         priya.screen_time_after = 180
+
+        # Seed friend connection: Priya + Rahul are pre-connected (demo setup)
+        rahul = demo_users[1]
+        session.add(FriendConnection(
+            user_id=priya.id,
+            friend_id=rahul.id,
+            status="accepted",
+            compatibility_score=0.92,
+        ))
 
         await session.commit()
         print("Seed data created successfully!")
