@@ -48,6 +48,14 @@ class User(Base):
     last_streak_date: Mapped[datetime | None] = mapped_column(Date)
     badges: Mapped[list[str] | None] = mapped_column(ARRAY(Text), default=[], server_default="{}")
 
+    # Safety & Privacy
+    women_only_mode: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    emergency_contact_name: Mapped[str | None] = mapped_column(String(100))
+    emergency_contact_phone: Mapped[str | None] = mapped_column(String(20))
+    
+    # Referral System
+    referral_code: Mapped[str | None] = mapped_column(String(20))
+
     # Live geo-tracking for real-time matchmaking
     live_lat: Mapped[float | None] = mapped_column(Float(10))
     live_lng: Mapped[float | None] = mapped_column(Float(10))

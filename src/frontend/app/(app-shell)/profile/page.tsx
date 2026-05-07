@@ -25,6 +25,7 @@ import {
   Gift
 } from "lucide-react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function ProfilePage() {
   const { user } = useAuthStore();
@@ -213,24 +214,23 @@ export default function ProfilePage() {
         className="space-y-3"
       >
         {[
-          { label: "Edit Profile", icon: UserIcon, color: "text-blue-500", bg: "bg-blue-50" },
-          { label: "Safety & Emergency", icon: Shield, color: "text-green-500", bg: "bg-green-50" },
-          { label: "Privacy Settings", icon: Sparkles, color: "text-purple-500", bg: "bg-purple-50" },
-          { label: "Support", icon: Heart, color: "text-rose-500", bg: "bg-rose-50" },
-          { label: "App Settings", icon: Settings, color: "text-gray-500", bg: "bg-gray-50" },
+          { label: "Edit Profile", href: "/profile/edit", icon: UserIcon, color: "text-blue-500", bg: "bg-blue-50" },
+          { label: "Safety & Emergency", href: "/profile/safety", icon: Shield, color: "text-green-500", bg: "bg-green-50" },
+          { label: "Privacy Settings", href: "/profile/privacy", icon: Sparkles, color: "text-purple-500", bg: "bg-purple-50" },
+          { label: "Invite & Earn", href: "/profile/support", icon: Gift, color: "text-rose-500", bg: "bg-rose-50" },
+          { label: "App Settings", href: "/profile/settings", icon: Settings, color: "text-gray-500", bg: "bg-gray-50" },
         ].map((item) => (
-          <div 
-            key={item.label}
-            className="flex items-center justify-between p-5 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group"
-          >
-            <div className="flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-2xl ${item.bg} flex items-center justify-center ${item.color}`}>
-                <item.icon className="w-5 h-5" />
+          <Link key={item.label} href={item.href}>
+            <div className="flex items-center justify-between p-5 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group mb-3">
+              <div className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-2xl ${item.bg} flex items-center justify-center ${item.color}`}>
+                  <item.icon className="w-5 h-5" />
+                </div>
+                <span className="font-bold text-[#1e3a5f] text-[15px]">{item.label}</span>
               </div>
-              <span className="font-bold text-[#1e3a5f] text-[15px]">{item.label}</span>
+              <ChevronRight className="w-5 h-5 text-[#1e3a5f]/20 group-hover:text-[#2cb1bc] group-hover:translate-x-1 transition-all" />
             </div>
-            <ChevronRight className="w-5 h-5 text-[#1e3a5f]/20 group-hover:text-[#2cb1bc] group-hover:translate-x-1 transition-all" />
-          </div>
+          </Link>
         ))}
       </motion.div>
 
