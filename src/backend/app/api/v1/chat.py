@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import asyncio
 import redis.asyncio as aioredis
 
@@ -233,7 +233,7 @@ async def websocket_chat(
                             user_id=user.id,
                             content=content,
                             message_type="text",
-                            expires_at=chat_expires_at or datetime.utcnow(),
+                            expires_at=chat_expires_at or datetime.utcnow() + timedelta(hours=24),
                         )
                         db.add(chat_msg)
                         await db.commit()
@@ -247,7 +247,7 @@ async def websocket_chat(
                     "user_name": user_name,
                     "content": content,
                     "timestamp": timestamp,
-                }, exclude_user=user_id)
+                })
 
     except WebSocketDisconnect:
         pass

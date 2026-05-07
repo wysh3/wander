@@ -1,62 +1,49 @@
 "use client";
 
-import { MapPin, Users, Radio, Footprints, Car, Navigation, Zap } from "lucide-react";
+import { MapPin, Users, Radio } from "lucide-react";
 import { useLocationStore } from "@/stores/location-store";
 import { haversineKm, formatDistance, getDistanceBand } from "@/lib/geo-utils";
 
-const RADIUS_OPTIONS = [
-  { value: 10, label: "10 km", description: "Very close" },
-  { value: 20, label: "20 km", description: "Nearby" },
-  { value: 30, label: "30 km", description: "City-wide" },
-];
+const RADIUS_OPTIONS = [10, 20, 30];
 
 export function RadiusSelector() {
   const { preferredRadiusKm, setPreferredRadius, nearbyCount, lat } =
     useLocationStore();
 
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="flex items-center gap-2">
-        <Radio className="h-4 w-4 text-wander-teal" />
-        <h3 className="text-sm font-semibold">Search Radius</h3>
-      </div>
+    <div className="flex items-center gap-3 flex-wrap">
+      <Radio className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
 
-      {/* Radius Pills */}
-      <div className="flex gap-2">
-        {RADIUS_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            onClick={() => setPreferredRadius(option.value)}
-            className={`flex-1 px-3 py-2 rounded-xl border-2 text-center transition-all ${
-              preferredRadiusKm === option.value
-                ? "border-wander-teal bg-wander-teal/10 text-wander-teal"
-                : "border-muted hover:border-wander-teal/40"
-            }`}
-          >
-            <p className="text-sm font-semibold">{option.label}</p>
-            <p className="text-[10px] text-muted-foreground">
-              {option.description}
-            </p>
-          </button>
-        ))}
-      </div>
+      {RADIUS_OPTIONS.map((km) => (
+        <button
+          key={km}
+          onClick={() => setPreferredRadius(km)}
+          className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+            preferredRadiusKm === km
+              ? "border-wander-teal bg-wander-teal/10 text-wander-teal"
+              : "border-muted hover:border-wander-teal/40 text-muted-foreground"
+          }`}
+        >
+          {km} km
+        </button>
+      ))}
 
-      {/* Status indicator */}
+      <span className="flex-1" />
+
       {lat ? (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-          <span>Live GPS active</span>
-          {nearbyCount > 0 && (
-            <span className="ml-auto font-medium text-wander-teal">
-              <Users className="h-3 w-3 inline mr-1" />
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+          {nearbyCount > 0 ? (
+            <span className="font-medium text-wander-teal">
               {nearbyCount} nearby
             </span>
+          ) : (
+            <span>GPS active</span>
           )}
         </div>
       ) : (
-        <div className="flex items-center gap-2 text-xs text-amber-500">
-          <div className="h-2 w-2 rounded-full bg-amber-500" />
+        <div className="flex items-center gap-1.5 text-[11px] text-amber-500">
+          <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
           <span>Tap to enable location</span>
         </div>
       )}

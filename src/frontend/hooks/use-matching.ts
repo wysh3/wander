@@ -17,6 +17,10 @@ interface GroupResult {
   match_score: number;
   member_ids: string[];
   members: MatchMember[];
+  activity_title?: string;
+  activity_category?: string;
+  scheduled_at?: string;
+  area?: string;
 }
 
 interface ConstraintStats {

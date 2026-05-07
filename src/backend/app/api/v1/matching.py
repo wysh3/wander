@@ -19,6 +19,30 @@ router = APIRouter()
 MATCH_TTL = 3600
 
 
+def _compute_group_score(members: list[dict]) -> float:
+    """Compute average weighted personality similarity within a group."""
+    if len(members) < 2:
+        return 0.80
+    weights = [1.0, 0.8, 0.7, 1.0, 1.5]
+    total = 0.0
+    count = 0
+    for i in range(len(members)):
+        v1 = members[i].get("vector")
+        if not v1 or len(v1) != 5:
+            continue
+        for j in range(i + 1, len(members)):
+            v2 = members[j].get("vector")
+            if not v2 or len(v2) != 5:
+                continue
+            dot = sum(w * a * b for w, a, b in zip(weights, v1, v2))
+            n1 = sum(w * a * a for w, a in zip(weights, v1)) ** 0.5
+            n2 = sum(w * b * b for w, b in zip(weights, v2)) ** 0.5
+            if n1 > 0 and n2 > 0:
+                total += dot / (n1 * n2)
+            count += 1
+    return round(total / count, 2) if count > 0 else 0.80
+
+
 def _get_redis():
     from app.db.redis import _redis_pool
     return _redis_pool
@@ -173,18 +197,34 @@ async def _run_matching_task(match_key: str, activity_id: uuid.UUID):
 
             hosts_result = await db.execute(select(Host).where(Host.active == True))
             available_hosts = hosts_result.scalars().all()
-            host_indices = list(range(min(len(available_hosts), activity.max_groups)))
+
+            user_id_to_index = {str(u.id): i for i, u in enumerate(users)}
+            host_indices = []
+            for host in available_hosts:
+                host_user_id_str = str(host.user_id)
+                if host_user_id_str in user_id_to_index:
+                    host_indices.append(user_id_to_index[host_user_id_str])
+            host_indices = host_indices[:activity.max_groups]
 
             await _match_redis_set(match_key, {"status": "solving", "progress": 50, "total_users": len(users), "current_user_id": match_user_id})
 
             groups, stats = solve_matching(users, activity, host_indices, history_records)
+
+            if not groups:
+                await _match_redis_set(match_key, {
+                    "status": "failed",
+                    "error": "No feasible groups found. Try increasing your search radius or adjusting group size settings.",
+                })
+                return
 
             saved_groups = []
             user_assigned = False
             for g_data in groups:
                 host_uuid = None
                 if g_data["group_index"] < len(host_indices):
-                    host_uuid = available_hosts[g_data["group_index"]].user_id
+                    host_user_idx = host_indices[g_data["group_index"]]
+                    if host_user_idx < len(users):
+                        host_uuid = users[host_user_idx].id
 
                 group = Group(
                     activity_id=activity.id,
@@ -210,6 +250,11 @@ async def _run_matching_task(match_key: str, activity_id: uuid.UUID):
                     "host_id": str(host_uuid) if host_uuid else None,
                     "member_ids": g_data["user_ids"],
                     "members": g_data["members"],
+                    "activity_title": activity.title,
+                    "activity_category": activity.category,
+                    "scheduled_at": activity.scheduled_at.isoformat() if activity.scheduled_at else None,
+                    "area": activity.area,
+                    "match_score": _compute_group_score(g_data["members"]),
                 })
 
             if not user_assigned and groups and match_user_id:
@@ -228,6 +273,11 @@ async def _run_matching_task(match_key: str, activity_id: uuid.UUID):
                     "host_id": None,
                     "member_ids": [match_user_id],
                     "members": [{"id": match_user_id, "name": "You", "gender": None}],
+                    "activity_title": activity.title,
+                    "activity_category": activity.category,
+                    "scheduled_at": activity.scheduled_at.isoformat() if activity.scheduled_at else None,
+                    "area": activity.area,
+                    "match_score": 0.80,
                 })
 
             await db.commit()

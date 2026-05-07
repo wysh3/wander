@@ -38,7 +38,7 @@ export default function ActivitiesPage() {
         </div>
       </div>
 
-      <div className="bg-card border rounded-xl p-4">
+      <div className="bg-card border rounded-xl px-4 py-2">
         <RadiusSelector />
       </div>
       <RecommendedCarousel />

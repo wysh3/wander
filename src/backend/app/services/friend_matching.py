@@ -68,9 +68,10 @@ def location_proximity(user_a: User, user_b: User) -> float:
 
 
 def complementary_diversity(user_a: User, user_b: User) -> float:
-    if not (user_a.personality_vector and user_b.personality_vector):
+    if user_a.personality_vector is None or user_b.personality_vector is None:
         return 0.0
-    pv_a, pv_b = list(user_a.personality_vector), list(user_b.personality_vector)
+    pv_a = list(user_a.personality_vector)
+    pv_b = list(user_b.personality_vector)
     if len(pv_a) != 5 or len(pv_b) != 5:
         return 0.0
 
@@ -156,7 +157,7 @@ async def get_friend_suggestions(user: User, db: AsyncSession, limit: int = 10) 
     exclude_ids = met_ids | connected_ids | blocked_ids | blocked_by_ids | {user.id}
 
     if user.personality_vector is not None and len(user.personality_vector) == 5:
-        vec_str = str(list(user.personality_vector))
+        vec_str = "[" + ",".join(str(v) for v in user.personality_vector) + "]"
         knn_query = text("""
             SELECT id, name, interests, vibe, home_lat, home_lng, travel_radius_km,
                    personality_vector, home_area,
@@ -177,6 +178,7 @@ async def get_friend_suggestions(user: User, db: AsyncSession, limit: int = 10) 
                 "knn_limit": 50,
             })
         except Exception:
+            await db.rollback()
             result = await db.execute(
                 select(User).where(
                     User.id != user.id,

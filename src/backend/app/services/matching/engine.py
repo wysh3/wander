@@ -105,7 +105,7 @@ def solve_matching(users: list[User], activity: Activity, hosts: list[int], hist
             **constraint_stats,
         }
     else:
-        groups = greedy_annealing_solution(users, hosts, activity)
+        groups = greedy_annealing_solution(users, hosts, activity, history_records)
         return groups, {
             "solver": "annealing",
             "status": "fallback",

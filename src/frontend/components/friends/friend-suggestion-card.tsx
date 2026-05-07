@@ -1,12 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { HeartHandshake } from "lucide-react";
+import { useState } from "react";
+import { HeartHandshake, Loader2, Check } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, ApiError } from "@/lib/api-client";
 
 interface SuggestionUser {
   id: string;
@@ -31,8 +31,9 @@ export function FriendSuggestionCard({
   suggestion: FriendSuggestion;
   onConnect?: () => void;
 }) {
-  const router = useRouter();
   const { user, compatibility, shared_interests, distance_km, ai_reason } = suggestion;
+  const [connecting, setConnecting] = useState(false);
+  const [requested, setRequested] = useState(false);
 
   const compatPercent = Math.round(compatibility * 100);
   const compatColor =
@@ -41,6 +42,21 @@ export function FriendSuggestionCard({
       : compatPercent >= 70
         ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
         : "bg-muted text-muted-foreground";
+
+  const handleConnect = async () => {
+    setConnecting(true);
+    try {
+      await apiFetch(`/friends/request/${user.id}`, { method: "POST" });
+      setRequested(true);
+      onConnect?.();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        setRequested(true);
+      }
+    } finally {
+      setConnecting(false);
+    }
+  };
 
   return (
     <Card className="hover:border-primary/30 transition-colors">
@@ -96,13 +112,17 @@ export function FriendSuggestionCard({
         <Button
           size="sm"
           className="mt-3 w-full"
-          onClick={() => {
-            apiFetch(`/friends/request/${user.id}`, { method: "POST" })
-              .then(() => onConnect?.());
-          }}
+          disabled={connecting || requested}
+          onClick={handleConnect}
         >
-          <HeartHandshake className="h-3.5 w-3.5 mr-1" />
-          Connect
+          {connecting ? (
+            <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+          ) : requested ? (
+            <Check className="h-3.5 w-3.5 mr-1" />
+          ) : (
+            <HeartHandshake className="h-3.5 w-3.5 mr-1" />
+          )}
+          {connecting ? "Sending..." : requested ? "Requested" : "Connect"}
         </Button>
       </CardHeader>
     </Card>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Users, BarChart3, ShieldAlert, Globe, HeartHandshake, Sparkles } from "lucide-react";
+import { Compass, Users, BarChart3, ShieldAlert, Globe, HeartHandshake } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
@@ -10,7 +10,7 @@ const tabs = [
   { href: "/communities", label: "Communities", icon: Globe },
   { href: "/friends", label: "Friends", icon: HeartHandshake },
   { href: "/groups", label: "Groups", icon: Users },
-  { href: "/matching", label: "Matching", icon: Sparkles },
+
   { href: "/report", label: "Report", icon: BarChart3 },
   { href: "/sos", label: "SOS", icon: ShieldAlert, isRed: true },
 ];
@@ -24,7 +24,7 @@ export function MobileTabBar() {
       style={{ minHeight: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}
     >
       {tabs.map((tab) => {
-        const isActive = pathname.includes(tab.href) || (tab.href === '/matching' && pathname.includes('/matching'));
+        const isActive = pathname.includes(tab.href);
         
         if (tab.isRed) {
           return (

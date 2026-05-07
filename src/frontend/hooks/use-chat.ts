@@ -25,7 +25,9 @@ export function useChat(groupId: string) {
   const connect = useCallback(() => {
     if (!accessToken || !groupId) return;
 
-    const wsUrl = `ws://localhost:8000/api/v1/groups/${groupId}/chat?token=${accessToken}`;
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    const wsBase = apiBase.replace(/^http/, "ws");
+    const wsUrl = `${wsBase}/groups/${groupId}/chat?token=${accessToken}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

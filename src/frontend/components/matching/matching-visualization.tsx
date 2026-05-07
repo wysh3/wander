@@ -165,42 +165,47 @@ export function MatchingVisualization({ phase, progress, result, matchStats }: M
               </button>
             </div>
 
-            <div className="space-y-4">
-              {result.groups?.map((group: any, i: number) => {
-                const bgImage = getActivityImage(group.activity_title, group.activity_category);
+              <div className="space-y-4">
+                {result.groups?.map((group: any, i: number) => {
+                  const bgImage = getActivityImage(group.activity_title, group.activity_category);
+                  const dateStr = group.scheduled_at
+                    ? format(new Date(group.scheduled_at), "EEE, d MMM • h:mm a")
+                    : null;
 
-                return (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 1.2 + i * 0.15 }}
-                    className="bg-white rounded-2xl border border-gray-100 p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex gap-5 items-center relative overflow-hidden group"
-                    onClick={() => router.push(`/groups/${group.id}`)}
-                  >
-                    <div 
-                      className="w-[120px] h-[120px] rounded-xl shrink-0 bg-gray-100 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                      style={{ backgroundImage: `url('${bgImage}')` }}
-                    />
-                    
-                    <div className="flex-1 py-1">
-                      {/* Badge Score */}
-                      <div className="absolute top-4 right-4 border border-[#34c759] text-[#34c759] bg-green-50 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">
-                        {group.match_score?.toFixed(0)}% Match
-                      </div>
-
-                      <h4 className="font-bold text-[17px] text-[#1e3a5f] pr-20">{group.activity_title || "Activity Group"}</h4>
+                  return (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 1.2 + i * 0.15 }}
+                      className="bg-white rounded-2xl border border-gray-100 p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex gap-5 items-center relative overflow-hidden group"
+                      onClick={() => router.push(`/groups/${group.id}`)}
+                    >
+                      <div 
+                        className="w-[120px] h-[120px] rounded-xl shrink-0 bg-gray-100 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+                        style={{ backgroundImage: `url('${bgImage}')` }}
+                      />
                       
-                      <div className="flex items-center gap-4 mt-2 mb-4">
-                        <div className="flex items-center gap-1.5 text-[12px] font-medium text-[#1e3a5f]/60">
-                          <Calendar className="w-[14px] h-[14px] text-[#2cb1bc]" />
-                          <span>Sun, 26 May • 8:00 AM</span>
+                      <div className="flex-1 py-1">
+                        {/* Badge Score */}
+                        <div className="absolute top-4 right-4 border border-[#34c759] text-[#34c759] bg-green-50 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">
+                          {((group.match_score ?? 0) * 100).toFixed(0)}% Match
                         </div>
-                        <div className="flex items-center gap-1.5 text-[12px] font-medium text-[#1e3a5f]/60">
-                          <MapPin className="w-[14px] h-[14px] text-[#2cb1bc]" />
-                          <span>Location</span>
+
+                        <h4 className="font-bold text-[17px] text-[#1e3a5f] pr-20">{group.activity_title || "Activity Group"}</h4>
+                        
+                        <div className="flex items-center gap-4 mt-2 mb-4">
+                          {dateStr && (
+                            <div className="flex items-center gap-1.5 text-[12px] font-medium text-[#1e3a5f]/60">
+                              <Calendar className="w-[14px] h-[14px] text-[#2cb1bc]" />
+                              <span>{dateStr}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1.5 text-[12px] font-medium text-[#1e3a5f]/60">
+                            <MapPin className="w-[14px] h-[14px] text-[#2cb1bc]" />
+                            <span>{group.area || "Location"}</span>
+                          </div>
                         </div>
-                      </div>
 
                       <div className="flex items-center gap-1.5 mt-1">
                         {group.members?.slice(0, 4).map((m: any, idx: number) => {

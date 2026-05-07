@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Users, BarChart3, ShieldAlert, Globe, HeartHandshake, Sparkles, User, ChevronRight, ShieldCheck } from "lucide-react";
+import { Compass, Users, BarChart3, ShieldAlert, Globe, HeartHandshake, User, ChevronRight, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -11,7 +11,7 @@ const navItems = [
   { href: "/communities", label: "Communities", icon: Globe },
   { href: "/friends", label: "Friend Match", icon: HeartHandshake },
   { href: "/groups", label: "My Groups", icon: Users },
-  { href: "/matching", label: "Matching Engine", icon: Sparkles },
+
   { href: "/report", label: "Report", icon: BarChart3 },
   { href: "/sos", label: "Emergency", icon: ShieldAlert },
   { href: "/host/dashboard", label: "Host", icon: User },
@@ -38,8 +38,7 @@ export function DesktopSidebar() {
       {/* Nav Items */}
       <nav className="flex-1 space-y-2 px-4 py-2">
         {navItems.map((item) => {
-          // Special case: if pathname is not matching but it's the matching engine active state in mockup 9
-          const isActive = pathname.includes(item.href) || (item.href === '/matching' && pathname.includes('/matching'));
+          const isActive = pathname.includes(item.href);
           return (
             <Link
               key={item.href}
