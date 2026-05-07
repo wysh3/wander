@@ -29,7 +29,8 @@ class UserResponse(BaseModel):
     preferred_radius_km: int = 20
     emergency_contact_name: str | None = None
     emergency_contact_phone: str | None = None
-    women_only_preference: bool = False
+    women_only_mode: bool = False
+    referral_code: str | None = None
     streak_weeks: int = 0
     total_experiences: int = 0
     total_people_met: int = 0
@@ -83,6 +84,7 @@ class UpdateProfileRequest(BaseModel):
     preferred_radius_km: int | None = None
     emergency_contact_name: str | None = None
     emergency_contact_phone: str | None = None
-    women_only_preference: bool | None = None
+    women_only_mode: bool | None = None
+    referral_code: str | None = None
     screen_time_before: int | None = None
     screen_time_after: int | None = None

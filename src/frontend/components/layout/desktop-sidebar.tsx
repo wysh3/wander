@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Users, BarChart3, ShieldAlert, Globe, HeartHandshake, User, ChevronRight, ShieldCheck } from "lucide-react";
+import { Compass, Users, BarChart3, ShieldAlert, Globe, HeartHandshake, Sparkles, User, ChevronRight, ShieldCheck, Heart, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -36,38 +36,60 @@ export function DesktopSidebar() {
       </div>
       
       {/* Nav Items */}
-      <nav className="flex-1 space-y-2 px-4 py-2">
-        {navItems.map((item) => {
-          const isActive = pathname.includes(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all",
-                isActive
-                  ? "bg-[#eaf4f4] text-[#2cb1bc]"
-                  : "text-[#1e3a5f]/70 hover:bg-gray-50 hover:text-[#1e3a5f]"
-              )}
-            >
-              <item.icon className={cn("h-5 w-5", isActive ? "text-[#2cb1bc]" : "text-[#1e3a5f]/50")} />
-              {item.label}
-            </Link>
-          );
-        })}
-        {isAdmin && (
+      <nav className="flex-1 space-y-2 px-4 py-2 overflow-y-auto">
+        <div className="mb-4">
+          <p className="px-4 text-[10px] font-bold text-[#1e3a5f]/30 uppercase tracking-[0.2em] mb-2">Main Menu</p>
+          {navItems.map((item) => {
+            const isActive = pathname.includes(item.href) || (item.href === '/matching' && pathname.includes('/matching'));
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-4 rounded-2xl px-4 py-3 text-sm font-semibold transition-all mb-1",
+                  isActive
+                    ? "bg-[#eaf4f4] text-[#2cb1bc]"
+                    : "text-[#1e3a5f]/70 hover:bg-gray-50 hover:text-[#1e3a5f]"
+                )}
+              >
+                <item.icon className={cn("h-5 w-5", isActive ? "text-[#2cb1bc]" : "text-[#1e3a5f]/50")} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Women Only Mode Section */}
+        <div className="pt-2 border-t border-gray-50 mt-4">
           <Link
-            href="/admin"
+            href="/women-only"
             className={cn(
               "flex items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all",
-              pathname.startsWith("/admin")
-                ? "bg-red-50 text-red-600 border border-red-100"
-                : "text-[#1e3a5f]/60 hover:bg-red-50/50 hover:text-red-500"
+              pathname.startsWith("/women-only")
+                ? "bg-purple-50 text-purple-600 border border-purple-100"
+                : "text-[#1e3a5f]/60 hover:bg-purple-50/50 hover:text-purple-500"
             )}
           >
-            <ShieldCheck className={cn("h-5 w-5", pathname.startsWith("/admin") ? "text-red-500" : "text-[#1e3a5f]/30")} />
-            Admin Panel
+            <Sparkles className={cn("h-5 w-5", pathname.startsWith("/women-only") ? "text-purple-500" : "text-purple-400/70")} />
+            Women-Only Mode
           </Link>
+        </div>
+
+        {isAdmin && (
+          <div className="pt-4">
+            <Link
+              href="/admin"
+              className={cn(
+                "flex items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all",
+                pathname.startsWith("/admin")
+                  ? "bg-red-50 text-red-600 border border-red-100"
+                  : "text-[#1e3a5f]/60 hover:bg-red-50/50 hover:text-red-500"
+              )}
+            >
+              <ShieldCheck className={cn("h-5 w-5", pathname.startsWith("/admin") ? "text-red-500" : "text-[#1e3a5f]/30")} />
+              Admin Panel
+            </Link>
+          </div>
         )}
       </nav>
 
@@ -106,4 +128,3 @@ export function DesktopSidebar() {
     </aside>
   );
 }
-
