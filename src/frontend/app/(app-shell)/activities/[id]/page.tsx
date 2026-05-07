@@ -110,7 +110,7 @@ export default function ActivityDetailPage() {
 
         {/* Distance badges */}
         {distanceKm != null && (
-          <div className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg border bg-white ${bandConfig[band]?.color || ""}">
+          <div className={`absolute bottom-4 right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg border bg-white ${bandConfig[band]?.color || ""}`}>
             {bandConfig[band]?.icon}
             {formatDistance(distanceKm)}
           </div>
