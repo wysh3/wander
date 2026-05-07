@@ -19,6 +19,9 @@
 15. [Dependencies & Sequencing](#dependencies--sequencing)
 16. [Trade-offs & Architectural Decisions](#trade-offs--architectural-decisions)
 17. [Potential Challenges & Mitigations](#potential-challenges--mitigations)
+18. [Enhanced Feature: Interest-Based Community Groups](#enhanced-feature-interest-based-community-groups)
+19. [Enhanced Feature: Local Event Recommendations](#enhanced-feature-local-event-recommendations)
+20. [Enhanced Feature: AI-Based Friend Matching](#enhanced-feature-ai-based-friend-matching)
 
 ---
 
@@ -74,8 +77,14 @@ Wander is a platform that takes strangers from the same city, places them into A
 
 - Complete venue management (seeded venue data)
 - User-created activities (15-20 seeded Bangalore activities)
-- Push notifications (Web Push API for reminder only in demo)
+- Push notifications (Web Push API for reminder only in demo; friend requests use in-app Toaster)
 - Video/voice calling
+- Community content posts / feed (for demo: community chat only)
+- Real-time friend request push notifications (polling OK for demo via react-query)
+- External event integration (Meetup, Eventbrite) — beyond hackathon scope
+- Recommendation engine ML training or A/B testing — static multi-factor scoring for demo
+- Friend matching collaborative filtering from interaction data — needs training data
+- pgvector IVFFlat index creation (demo with 20 users uses exact KNN `<=>` scan; index for production)
 
 ---
 
@@ -573,6 +582,16 @@ activity:{activity_id}:detail → Hash (cached detail, TTL=120)
 
 auth:{phone}:otp              → String (hashed OTP, TTL=300)
 auth:{phone}:attempts         → Counter (TTL=900)
+
+community:{community_id}:members → Set of user_ids (TTL=86400)
+community:{community_id}:meta    → Hash (name, tags, member_count, TTL=86400)
+
+rec:{user_id}:{activity_id}:score → String (JSON score breakdown, TTL=300)
+rec:{user_id}:top5                → List (ordered activity IDs, TTL=300)
+rec:{user_id}:reason:{activity_id} → String (ai_reason text, TTL=300)
+
+friends:{user_id}:suggestions  → List (JSON array of suggestions, TTL=600)
+friends:{user_id}:requests     → Set (request IDs, TTL=300)
 ```
 
 ---
@@ -1266,9 +1285,11 @@ export function useOffline() {
 - 3 past completed groups (for Wander Report data)
 - Google Maps pre-cached for offline demo safety
 
-### Total Time: 5 minutes 30 seconds
+### Total Time: ~7 minutes (core 5:30 + 80s enhanced features)
 
 > **Demo philosophy: Every scene must reinforce "AI for mental health." Don't just show features — narrate the AI decisions happening behind the scenes.**
+>
+> **Note:** If time is tight, Scenes 7.5, 7.6, and 7.7 can be compressed or presented as a rapid-fire "AI Ecosystem" montage (45s total). The core 5:30 via Scenes 0-8 remains the minimum viable demo.
 
 **Scene 0: The Crisis (30s)** — Pitch deck slides 1-3. Lead with WHO stat (loneliness = 15 cigarettes/day). End with: "Group composition is an optimization problem. We solved it."
 
@@ -1285,6 +1306,12 @@ export function useOffline() {
 **Scene 6: SOS (30s)** — ⭐ Dual-screen demo. Long-press → alert arrives in 2.1s on second device with GPS, police station, host phone. "Under 3 seconds. WebSocket, polling fallback, SMS fallback. Triple redundancy."
 
 **Scene 7: Wander Report (30s)** — "12 experiences. 47 people met. 8 neighborhoods explored. 43% less screen time." *Pause.* "Every other app measures engagement with their platform. We measure engagement with the world."
+
+**Scene 7.5: Communities (30s)** — "But the story doesn't end after one activity." Navigate to Communities tab. Browse interest-tagged communities. Priya's interests (trekking, photography) highlight "Weekend Trekkers" — 87 members, 23 treks completed. She sees Lakshmi from her Nandi Hills group is already here. Join in one tap. Community chat is alive between activities. "This is where belonging lives — not just during activities, but between them."
+
+**Scene 7.6: Friend Matching (30s)** — Navigate to Friends tab. "AI doesn't just match groups — it finds your people." pgvector KNN scans personality vectors. Top suggestion: Rahul at 92% compatibility — both adventurers, both trekkers, both in Indiranagar. Shared interests highlighted. AI-generated reason: "Your trekking passion and creative vibe click perfectly — and you live 3km apart." Send friend request. "1-on-1 matching for genuine friendship, not just activity groups."
+
+**Scene 7.7: Recommendations (20s)** — Return to Activities feed. Top section: "Recommended For You." Nandi Hills Sunrise Trek at 97% match with AI reason. No scrolling. No browsing. "The app knows you. It doesn't give you a feed — it gives you the best answer."
 
 **Scene 8: Closer (15s)** — "Loneliness is the health crisis of our generation. Wander is AI that solves it — not by keeping you on a screen, but by getting you off one."
 
@@ -1303,6 +1330,7 @@ export function useOffline() {
 | 5 | AI Matching Deep Dive | 6 constraints, linearized pairwise similarity, CP-SAT solver + annealing fallback. Live code snippet. Solves 12 users in 1.8s. | Technical depth — this is the slide judges remember |
 | 6 | AI Onboarding | LLM chat → structured personality vector (5D) via function calling. Not a quiz — data collection disguised as conversation. | Shows AI is integrated end-to-end, not bolted on |
 | 7 | Safety (Non-Negotiable) | Gov ID verification, SOS under 3 seconds (triple redundancy), Wander Hosts, women-only groups, full audit trail | Preempts the #1 objection before it's asked |
+| 7.5 | The AI Ecosystem | Communities (interest-based persistent groups), Friend Matching (pgvector KNN + 5-factor compatibility), Recommendations (4D scoring engine). Three AI layers that create a complete social fabric — discover → connect → belong. | Shows the product is a platform, not a single feature |
 | 8 | The De-Addiction Philosophy | No feed. No likes. Ephemeral chat (7 days). Wander Report measures real-world engagement. "Replacement > restriction." | Differentiator: the only app designed to reduce its own usage |
 | 9 | Live Demo | Full app walkthrough (see Demo Flow below) | Where the pitch becomes undeniable |
 | 10 | Closer | "Every other app measures engagement with their platform. We measure engagement with the world." | The line they'll quote when discussing winners |
@@ -1384,7 +1412,9 @@ AI Onboarding and Verification are off the critical path (Priya can be pre-confi
 | "Is the verification real?" | Demo uses DigiLocker mock (real API requires registered org + sandbox). Architecture follows the actual DigiLocker OAuth spec — production integration is straightforward. |
 | "How do you make money?" | Freemium (₹199/mo for unlimited activities), B2B corporate team bonding, venue partnerships. But for this hackathon — the focus is the AI and the impact. |
 | "What about safety?" | Government ID verification, SOS with triple redundancy (<3s), trained Wander Hosts, women-only groups, full audit trail. Safety is non-negotiable. |
-| "Can this scale?" | CP-SAT solves 12 users in 1.8s with annealing fallback for 50+. pgvector handles personality similarity at scale. WebSocket + Redis handles real-time. |
+| "Can this scale?" | CP-SAT solves 12 users in 1.8s with annealing fallback for 50+. pgvector KNN handles friend matching at scale (IVFFlat index for production). WebSocket + Redis handles real-time. |
+| "How is friend matching different from dating apps?" | Dating apps maximize swipes. Friend matching optimizes for shared interests + personality compatibility + location proximity — weighted multi-factor scoring. No swiping. No profiles to browse. The AI surfaces the best matches. |
+| "What keeps users coming back?" | Three layers: (1) Communities — persistent interest-based groups between activities, (2) Friend Matching — genuine 1-on-1 connections, (3) Wander Report — gamified real-world engagement. It's not an activity app — it's a social home. |
 
 ---
 
@@ -1472,6 +1502,9 @@ AI Onboarding and Verification are off the critical path (Priya can be configure
 | 10 | **PWA over native app** | Single codebase. Installable. Offline-ready. Native feel without native development cost. |
 | 11 | **Heuristic no-show over ML model** | No training data exists for demo. Heuristic is transparent and predictable. ML model is future work. |
 | 12 | **24-hour build with detailed plan** | All architecture, schemas, API specs, and component designs fully specified before the event. Team executes from plan during the 24 hours. Parallel work streams (backend/AI/frontend/infra) enable full feature coverage. |
+| 13 | **Extend Group table over new Community table** | Communities reuse the existing Group + GroupMember tables with a `group_type` discriminator. Saves ~100 lines of model/API code vs a new table. activity_id becomes nullable. |
+| 14 | **Multi-factor static scoring over ML model for recommendations** | No training data exists for the hackathon. Multi-factor scoring (interest + location + personality + social) is transparent, debuggable, and produces correct results. ML model is future work. |
+| 15 | **pgvector exact KNN over IVFFlat index for friend matching** | With 20 demo users, exact `<=>` scan is <1ms. IVFFlat index requires data to exist first. Index creation code is prep'd but not migrated — production-ready with one SQL command. |
 
 ---
 
@@ -1488,4 +1521,1160 @@ AI Onboarding and Verification are off the critical path (Priya can be configure
 | Presentation day issues | Detailed plan with allocated time blocks. On-site: build in focused sprints, test on projector, verify all services, rehearse pitch + demo, prep for Q&A. Backup video recorded as insurance. |
 | Matching produces bad groups | Post-process validation. Fallback to greedy if solver output violates constraints. Seed data designed for clean results. |
 | Team member dropout | Cross-train on each other's code. Document all components. Scope down non-essential features. |
+| Enhanced features time overrun | Core demo (Scenes 0-8, 5:30) is the priority. Communities, friends, and recommendations are additive — each scene is independent. Can cut any/all and still deliver a complete demo. |
+| pgvector not installed on Supabase | Supabase supports pgvector natively. If unavailable, fall back to Python cosine similarity with in-memory computation (no DB vector operations needed for 20 users). |
+| Friend matching produces obvious matches | The demo persona (Priya + Rahul) is designed with complementary vectors + shared interests. Seed data is hand-crafted for clean demos. The AI explanation (Nemotron) adds the "magic" layer even if matches seem obvious. |
 | Judges dismiss as "social app" | Every slide reinforces anti-social-media positioning. The de-addiction philosophy is in the product, not just the pitch. The Wander Report closer: "Every other app measures engagement with their platform. We measure engagement with the world." |
+
+---
+
+## Enhanced Feature: Interest-Based Community Groups
+
+### Problem & Rationale
+
+The current Group model is built exclusively for activity-matched ephemeral groups — groups are created by the matching engine, tied to a specific activity, and destroyed after the activity window. But users repeatedly asked: *"Can I stay in touch with my trekking group?"* and *"Is there a space for photography enthusiasts?"*
+
+Interest-based communities are the retention layer. They transform Wander from a "one-time activity app" into a persistent social home. Communities keep users returning between activities, deepen bonds formed during activities, and create the belonging infrastructure that the hackathon problem statement demands.
+
+**Hackathon impact:** Shows the product is a platform, not a feature. Persistent communities demonstrate the "TAM expansion" argument judges look for.
+
+### Reuse of Existing Infrastructure
+
+| Existing Asset | How Communities Reuse It |
+|---|---|
+| `Group` model | Extended with `group_type = "community"`, making `activity_id` nullable |
+| `GroupMember` model | Reused as-is; `role` field already supports "founder" / "admin" / "member" |
+| `groups` API module | Extended with community-specific endpoints in same router |
+| Chat WebSocket `/ws/v1/chat/:id` | Reused for community chat (no TTL, persistent) |
+| `User.interests` column | Drives community discovery and suggestions |
+| MobileTabBar / DesktopSidebar | New "Communities" tab added alongside existing 4 tabs |
+
+### Database Changes
+
+#### Extended `groups` table (additive migration)
+
+```sql
+ALTER TABLE groups
+    ADD COLUMN group_type VARCHAR(20) DEFAULT 'matching',
+    ADD COLUMN interest_tags TEXT[] DEFAULT '{}',
+    ADD COLUMN description TEXT,
+    ADD COLUMN cover_image_url TEXT,
+    ADD COLUMN rules TEXT,
+    ADD COLUMN member_limit INT DEFAULT 100,
+    ALTER COLUMN activity_id DROP NOT NULL;  -- communities don't need an activity
+
+CREATE INDEX idx_groups_group_type ON groups(group_type);
+CREATE INDEX idx_groups_interest_tags ON groups USING GIN(interest_tags);
+```
+
+#### No new tables needed
+
+`GroupMember` already supports communities. `role` field accommodates:
+- `"founder"` — user who created the community
+- `"admin"` — appointed by founder
+- `"member"` — regular members
+
+### Community Model (SQLAlchemy ORM extension)
+
+```python
+# Add to app/models/group.py
+@declared_attr
+def __mapper_args__(cls):
+    return {
+        "polymorphic_identity": cls.__tablename__,
+        "polymorphic_on": cls.group_type,
+    }
+
+# Add columns to Group:
+group_type: Mapped[str] = mapped_column(String(20), default="matching")
+interest_tags: Mapped[list[str] | None] = mapped_column(ARRAY(Text), default=[])
+description: Mapped[str | None] = mapped_column(Text)
+cover_image_url: Mapped[str | None] = mapped_column(String(500))
+rules: Mapped[str | None] = mapped_column(Text)
+member_limit: Mapped[int] = mapped_column(Integer, default=100)
+```
+
+### API Design
+
+```
+GET    /api/v1/communities              → ?interest=&cursor=&limit=10
+                                          → PaginatedResponse[CommunityResponse]
+                                          Browse communities by interest tag, sorted by member count desc
+
+GET    /api/v1/communities/suggested    → ?limit=5
+                                          → List of communities where community.interest_tags ∩ user.interests ≠ ∅
+                                          Sorted by: (overlapping_tags / len(community.interest_tags)) * member_count
+
+GET    /api/v1/communities/:id          → CommunityResponse with members, member count, is_member flag
+
+POST   /api/v1/communities              → Body: { name, interest_tags, description, rules? }
+                                          → Create community. Creator auto-assigned role="founder".
+                                          Only verified users can create.
+
+POST   /api/v1/communities/:id/join     → Add current_user as member. Return { joined: true }.
+                                          Validate: not already member, below member_limit, verified user.
+
+POST   /api/v1/communities/:id/leave    → Remove membership. Founder can't leave (must transfer or disband).
+
+GET    /api/v1/communities/:id/chat/history → Reuses existing chat history endpoint (no TTL for communities)
+
+DELETE /api/v1/communities/:id          → Founder or admin only. Soft-delete (status = "archived").
+```
+
+### CommunityResponse Schema
+
+```python
+class CommunityResponse(BaseModel):
+    id: uuid.UUID
+    name: str  # derived from first interest_tag + "Community" or custom name
+    interest_tags: list[str]
+    description: str | None
+    member_count: int
+    cover_image_url: str | None
+    rules: str | None
+    member_limit: int
+    is_member: bool = False
+    role: str | None = None  # user's role if member (founder/admin/member)
+    created_by: str | None = None  # founder name
+    created_at: datetime
+
+class CommunityListResponse(BaseModel):
+    items: list[CommunityResponse]
+    next_cursor: str | None
+```
+
+### Frontend Design
+
+#### New Pages
+
+```
+frontend/app/(app-shell)/
+├── communities/
+│   ├── page.tsx                    # Community discovery (feed)
+│   └── [id]/
+│       ├── page.tsx                # Community detail + members
+│       └── chat/
+│           └── page.tsx            # Community chat (persistent)
+```
+
+#### New Components
+
+```
+components/communities/
+├── community-card.tsx              # Preview card: interest tag, name, member count, cover
+├── community-feed.tsx              # Grid of community cards with interest filter pills
+├── interest-filter.tsx             # Horizontal scrollable interest tag pills (reuse category-filter pattern)
+├── community-detail.tsx            # Full detail: cover, description, rules, member list
+├── community-chat.tsx              # Chat wrapper (reuses chat-window component)
+└── create-community-form.tsx       # Modal form: name, tags, description, rules
+```
+
+#### Navigation Changes
+
+Add "Communities" as the 5th tab in both MobileTabBar and DesktopSidebar:
+```typescript
+// MobileTabBar — add to tabs array
+{ href: "/communities", label: "Communities", icon: Globe }
+// OR replace "Groups" with "Communities" — groups are accessible from community detail
+
+// DesktopSidebar — add to navItems array  
+{ href: "/communities", label: "Communities", icon: Globe }
+```
+
+#### Chat Behavior
+
+- Activity group chat: ephemeral (Redis TTL 7 days) — unchanged
+- Community chat: persistent (no Redis TTL, stored only in PostgreSQL)
+- Reuses the same `useChat` WebSocket hook — just with `group_type` discriminator
+- When `group_type = "community"`, countdown timer is hidden, no TTL countdown
+
+### Community Discovery Algorithm
+
+```
+For each user visiting /communities:
+  1. Rank all communities by:
+     relevance = (|user.interests ∩ community.interest_tags| / |community.interest_tags|) * 0.6
+                + (community.member_count / max_member_count) * 0.4
+  2. Top result with relevance > 0 gets "Recommended for You" badge
+  3. Fallback: sort by member_count desc (popular communities)
+```
+
+### Redis Changes
+
+```
+community:{community_id}:members  → Set of user_ids (for fast membership check, TTL=86400)
+community:{community_id}:meta     → Hash (name, tags, member_count, TTL=86400)
+```
+
+### Demo Scene: Communities (45s add-on)
+
+After the Report reveal: "But the story doesn't end after one activity. Priya joins the Weekend Trekkers community — 87 members who've done 23 treks together. She sees Lakshmi (from her Nandi Hills group) is already here. Community chat has 142 messages. This is where belonging lives between activities."
+
+---
+
+## Enhanced Feature: Local Event Recommendations
+
+### Problem & Rationale
+
+The current activity discovery is functional but dumb — it shows the same 15 activities to every user sorted by scheduled_at. A user who loves peaceful yoga sees "Midnight Chaos Bowling" at the top. This is a missed opportunity to demonstrate AI personalization.
+
+A recommendation engine shows judges that the AI doesn't just match groups — it understands individual preferences and proactively suggests relevant experiences. This closes the loop: LLM extracts personality → recommendations use it → matching forms groups → bonding happens → history feeds back.
+
+**Hackathon impact:** Transforms "activity listing" into "AI-curated experience feed." Visually indistinguishable from Netflix/Spotify recommendation quality.
+
+### Hybrid Recommendation Engine
+
+The engine scores every open activity for every user on 4 weighted dimensions:
+
+```
+SCORE(user, activity) = 
+    0.40 * interest_match(user, activity)       # Content-based
+  + 0.25 * location_score(user, activity)       # Geospatial
+  + 0.15 * personality_fit(user, activity)      # Psychographic
+  + 0.20 * social_proof(user, activity)         # Collaborative
+```
+
+#### Dimension 1: Interest Match (40%)
+
+```python
+def interest_match(user, activity) -> float:
+    """Jaccard similarity between user interests and activity tags."""
+    if not activity.tags:
+        return 0.5  # neutral for untagged activities
+    
+    user_interests = set(user.interests or [])
+    activity_tags = set(activity.tags or [])
+    
+    if not user_interests:
+        return 0.5  # neutral for uninterested users
+    
+    intersection = user_interests & activity_tags
+    union = user_interests | activity_tags
+    
+    return len(intersection) / len(union) if union else 0.0
+```
+
+Requires adding a `tags` column to activities:
+```sql
+ALTER TABLE activities ADD COLUMN tags TEXT[] DEFAULT '{}';
+CREATE INDEX idx_activities_tags ON activities USING GIN(tags);
+```
+
+Seed activities get tags auto-generated from title + category:
+
+| Activity | Tags |
+|---|---|
+| Nandi Hills Sunrise Trek | ["trekking", "outdoors", "sunrise", "nature", "hiking"] |
+| Pottery + Chai at Lahe Lahe | ["pottery", "creativity", "art", "chai", "hands-on"] |
+| Board Game Night | ["board_games", "strategy", "social", "indoor", "gaming"] |
+| Sunday Morning Yoga | ["yoga", "meditation", "wellness", "morning", "outdoors"] |
+| Koramangala Food Walk | ["food", "exploring", "street_food", "walking", "social"] |
+| Midnight Chaos Bowling | ["bowling", "night", "social", "indoor", "fun"] |
+
+#### Dimension 2: Location Score (25%)
+
+```python
+def location_score(user, activity) -> float:
+    """1.0 if within 5km, linear decay to 0.0 at travel_radius_km."""
+    if not (user.home_lat and user.home_lng and activity.lat and activity.lng):
+        return 0.5  # neutral if location unknown
+    
+    dist = haversine_km(user.home_lat, user.home_lng, activity.lat, activity.lng)
+    radius = user.travel_radius_km or 15
+    
+    if dist <= 5.0:
+        return 1.0
+    if dist >= radius:
+        return 0.0
+    
+    return 1.0 - (dist - 5.0) / (radius - 5.0)
+```
+
+#### Dimension 3: Personality Fit (15%)
+
+Category-to-personality ideal vector mapping (hand-crafted based on psychological profiles):
+
+```python
+CATEGORY_IDEAL_VECTORS = {
+    "physical":    [0.90, 0.85, 0.50, 0.60, 0.50],  # high adventure, high energy
+    "social_good": [0.40, 0.45, 0.85, 0.75, 0.80],  # high social, high conscientiousness
+    "skill":       [0.40, 0.35, 0.55, 0.90, 0.70],  # high openness
+    "mental":      [0.20, 0.20, 0.40, 0.85, 0.85],  # high openness, high conscientiousness
+    "chaotic":     [0.85, 0.90, 0.85, 0.70, 0.25],  # low conscientiousness
+    "explore":     [0.75, 0.55, 0.70, 0.85, 0.45],  # high adventure, high openness
+    "slow":        [0.15, 0.15, 0.45, 0.55, 0.80],  # low adventure, low energy
+}
+
+def personality_fit(user, activity) -> float:
+    """Cosine similarity between user vector and ideal vector for activity category."""
+    if not user.personality_vector or len(user.personality_vector) != 5:
+        return 0.5
+    
+    ideal = CATEGORY_IDEAL_VECTORS.get(activity.category)
+    if not ideal:
+        return 0.5
+    
+    return cosine_similarity_vecs(user.personality_vector, ideal)
+```
+
+#### Dimension 4: Social Proof (20%)
+
+```python
+async def social_proof(user, activity, db) -> float:
+    """
+    Ratio of similar users who joined this activity.
+    Similar = personality_vector within 0.15 cosine distance.
+    """
+    # Get count of users who joined this activity
+    join_count = await count_joins(activity.id, db)
+    if join_count == 0:
+        return 0.5  # neutral for new activities
+    
+    # Get count of similar users who joined
+    similar_joins = await count_similar_joins(user, activity.id, db)
+    
+    return min(1.0, similar_joins / max(1, join_count))
+```
+
+### LLM-Generated Justification
+
+After scoring, the top-3 recommendations get a one-line AI justification via NVIDIA Nemotron:
+
+```python
+async def generate_recommendation_reason(user, activity) -> str:
+    prompt = (
+        f"This user has interests: {user.interests}. Their vibe is {user.vibe}. "
+        f"Personality: adventure={pv[0]}, energy={pv[1]}, social={pv[2]}, openness={pv[3]}, conscientiousness={pv[4]}. "
+        f"Recommend this activity: '{activity.title}' ({activity.category}) in {activity.area}. "
+        f"Give ONE compelling sentence under 100 chars explaining why it matches them."
+    )
+    result = await call_nvidia(prompt)
+    return result.get("reason", "") if result else _fallback_reason(user, activity)
+
+def _fallback_reason(user, activity) -> str:
+    """Deterministic fallback when LLM unavailable."""
+    shared = [i for i in (user.interests or []) if i in (activity.tags or [])]
+    if shared:
+        return f"Perfect for {', '.join(shared[:2])} enthusiasts like you"
+    if user.vibe:
+        return f"A {activity.category} experience suited for your {user.vibe} vibe"
+    return f"Popular in {activity.area or 'your area'}"
+```
+
+### API Design
+
+```
+GET /api/v1/activities/recommended?limit=5
+    → [
+        {
+          "activity": ActivityResponse,
+          "score": 0.87,
+          "ai_reason": "Your trekking passion meets the perfect sunrise — this was built for adventurous souls with high energy.",
+          "score_breakdown": {
+            "interest_match": 0.85,
+            "location_score": 1.0,
+            "personality_fit": 0.78,
+            "social_proof": 0.90
+          }
+        },
+        ...
+      ]
+```
+
+### Performance Strategy
+
+```
+Caching:
+  Redis: rec:{user_id}:{activity_id}:score   → Float, TTL=300s
+  Redis: rec:{user_id}:top5                   → Sorted Set (score, activity_id), TTL=300s
+  
+Precomputation:
+  - On activity status change → open: compute scores for all active users (background task)
+  - On user onboarding complete: compute scores for all open activities (background task)
+  - Lazy: compute on first request, cache result
+
+For demo (20 users, 15 activities): trivial. All scores computed in <10ms.
+For production: background worker computes recommendations on cron (every 5 min).
+```
+
+### Redis Key Additions
+
+```
+rec:{user_id}:{activity_id}       → String (JSON score breakdown, TTL=300)
+rec:{user_id}:top5                → List (ordered activity IDs, TTL=300)
+rec:{user_id}:reason:{activity_id} → String (ai_reason text, TTL=300)
+```
+
+### Frontend Design
+
+#### New Page Section
+
+Add "Recommended For You" horizontal scroll section at top of `/activities/page.tsx`:
+
+```
+┌─────────────────────────────────────────┐
+│  Recommended For You                     │
+│  ┌────────┐ ┌────────┐ ┌────────┐       │
+│  │ Trek   │ │ Yoga   │ │ Food   │  ...  │
+│  │ 97%    │ │ 89%    │ │ 82%    │       │
+│  │ match  │ │ match  │ │ match  │       │
+│  └────────┘ └────────┘ └────────┘       │
+│  "Perfect for trekking enthusiasts..."   │
+├─────────────────────────────────────────┤
+│  All Activities                 [Filter] │
+│  ...                                     │
+```
+
+#### New Component
+
+```
+components/activities/
+├── recommended-carousel.tsx       # Horizontal scrollable curated cards
+└── recommended-card.tsx           # Card with: cover, title, score badge, ai_reason, host info
+```
+
+The recommended card uses a green-to-red gradient badge for the match score (≥85% green, 70-84% yellow, <70% neutral).
+
+### Activity Tags Column
+
+```sql
+ALTER TABLE activities ADD COLUMN tags TEXT[] DEFAULT '{}';
+CREATE INDEX idx_activities_tags ON activities USING GIN(tags);
+```
+
+Update `Activity` model:
+```python
+tags: Mapped[list[str] | None] = mapped_column(ARRAY(Text), default=[])
+```
+
+Update seed data with tags (see table above).
+
+### RecommendationService
+
+```python
+# New file: app/services/recommendations.py
+
+import math
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func, text
+from app.models.user import User
+from app.models.activity import Activity
+from app.models.user_history import UserHistory
+from app.services.onboarding import call_nvidia
+
+# Implements: interest_match(), location_score(), personality_fit(), social_proof()
+# Implements: get_recommendations(user, db, limit=5) -> list[dict]
+# Implements: generate_reason(user, activity) -> str
+```
+
+### Demo Scene: Recommendations (30s add-on)
+
+After onboarding: "Priya doesn't browse — Wander recommends. Her personality vector (adventurous, high energy, social) meets the activity catalog. Nandi Hills Sunrise Trek lights up at 97% match. The AI reason: 'Your trekking passion meets the perfect sunrise — this was built for adventurous souls.' No scrolling. No algorithm feed. Just the best fit."
+
+---
+
+## Enhanced Feature: AI-Based Friend Matching
+
+### Problem & Rationale
+
+The CP-SAT matching engine optimizes *groups* for *activities*. But what about 1-on-1 connections? What about finding a compatible person to become actual friends with — beyond the 3-hour activity window?
+
+Friend matching is the deepest AI demonstration. It proves the 5D personality vectors aren't just for group composition — they capture enough signal to predict interpersonal compatibility. This is the feature that answers "Where's the AI?" with a mic-drop.
+
+**Hackathon impact:** The most technically impressive feature. Uses pgvector KNN search, multi-factor weighted scoring, vibe compatibility matrix, and LLM-generated compatibility explanations. Shows the personality vectors are meaningful, not random.
+
+### Multi-Factor Compatibility Score
+
+```
+COMPATIBILITY(user_a, user_b) =
+    0.35 * personality_similarity(user_a, user_b)      # Weighted cosine (existing scoring.py)
+  + 0.30 * interest_overlap(user_a, user_b)            # Jaccard of interests
+  + 0.10 * vibe_compatibility(user_a, user_b)          # Predefined vibe pairs
+  + 0.15 * location_proximity(user_a, user_b)          # Haversine distance scaled
+  + 0.10 * complementary_diversity(user_a, user_b)     # Bonus for complementary traits
+```
+
+#### Sub-dimension Details
+
+**1. Personality Similarity (35%)** — Already implemented in `scoring.py:personality_similarity()`. Reuse directly.
+
+**2. Interest Overlap (30%)**
+
+```python
+def interest_overlap(user_a, user_b) -> float:
+    """Jaccard similarity of interest sets."""
+    a = set(user_a.interests or [])
+    b = set(user_b.interests or [])
+    if not a and not b:
+        return 0.0
+    return len(a & b) / len(a | b)
+```
+
+**3. Vibe Compatibility Matrix (10%)**
+
+```python
+VIBE_COMPAT = {
+    #        chill   balanced   energetic   curious   adventurous   creative
+    "chill":        { "chill": 1.0, "balanced": 0.8, "energetic": 0.3, "curious": 0.6, "adventurous": 0.4, "creative": 0.7 },
+    "balanced":     { "chill": 0.8, "balanced": 1.0, "energetic": 0.7, "curious": 0.8, "adventurous": 0.6, "creative": 0.7 },
+    "energetic":    { "chill": 0.3, "balanced": 0.7, "energetic": 1.0, "curious": 0.6, "adventurous": 0.9, "creative": 0.5 },
+    "curious":      { "chill": 0.6, "balanced": 0.8, "energetic": 0.6, "curious": 1.0, "adventurous": 0.8, "creative": 0.9 },
+    "adventurous":  { "chill": 0.4, "balanced": 0.6, "energetic": 0.9, "curious": 0.8, "adventurous": 1.0, "creative": 0.6 },
+    "creative":     { "chill": 0.7, "balanced": 0.7, "energetic": 0.5, "curious": 0.9, "adventurous": 0.6, "creative": 1.0 },
+}
+
+def vibe_compatibility(user_a, user_b) -> float:
+    a_v = user_a.vibe or "balanced"
+    b_v = user_b.vibe or "balanced"
+    return VIBE_COMPAT.get(a_v, {}).get(b_v, 0.5)
+```
+
+**4. Location Proximity (15%)**
+
+```python
+def location_proximity(user_a, user_b) -> float:
+    """1.0 if within 5km of each other, 0.0 if beyond combined travel radius."""
+    if not all([user_a.home_lat, user_a.home_lng, user_b.home_lat, user_b.home_lng]):
+        return 0.5
+    
+    dist = haversine_km(user_a.home_lat, user_a.home_lng, user_b.home_lat, user_b.home_lng)
+    combined_radius = (user_a.travel_radius_km or 15) + (user_b.travel_radius_km or 15)
+    
+    if dist <= 5.0:
+        return 1.0
+    if dist >= combined_radius:
+        return 0.0
+    
+    return 1.0 - (dist - 5.0) / (combined_radius - 5.0)
+```
+
+**5. Complementary Diversity (10%)**
+
+Bonus for complementary pairs — people who are different but balanced. For example, high-energy adventurous paired with high-conscientiousness balanced makes great activity buddies.
+
+```python
+def complementary_diversity(user_a, user_b) -> float:
+    """Reward complementary trait pairs. Not just similarity — balance matters."""
+    if not (user_a.personality_vector and user_b.personality_vector):
+        return 0.0
+    pv_a, pv_b = user_a.personality_vector, user_b.personality_vector
+    
+    # Check for complementary patterns:
+    # high adventure (a) + high conscientiousness (b) in the same pair
+    # diverse openness + similar social level
+    adv_diff = abs(pv_a[0] - pv_b[0])  # adventure difference
+    con_diff = abs(pv_a[4] - pv_b[4])  # conscientiousness difference
+    soc_diff = abs(pv_a[2] - pv_b[2])  # social difference
+    
+    # Score: reward moderate differences (not identical, not opposite)
+    # Complementary sweet spot: adv_diff 0.2-0.5, con_diff 0.2-0.5, soc_diff < 0.3
+    adv_score = 0.5 - abs(0.35 - adv_diff) / 0.35
+    con_score = 0.5 - abs(0.35 - con_diff) / 0.35
+    soc_score = 1.0 - soc_diff / 0.3
+    
+    return max(0.0, (adv_score * 0.35 + con_score * 0.35 + soc_score * 0.3))
+```
+
+### pgvector KNN Pipeline
+
+The matching engine uses pgvector's IVFFlat index for efficient nearest-neighbor search:
+
+```python
+async def get_friend_suggestions(user: User, db: AsyncSession, limit: int = 10) -> list[dict]:
+    """Complete friend suggestion pipeline."""
+    
+    # Step 1: pgvector KNN — get 50 nearest personality neighbors
+    knn_query = text("""
+        SELECT id, personality_vector, interests, vibe, home_lat, home_lng, travel_radius_km,
+               personality_vector <=> :target_vector AS distance
+        FROM users
+        WHERE id != :user_id
+          AND onboarding_completed = true
+          AND verification_status = 'verified'
+          AND city = :city
+        ORDER BY personality_vector <=> :target_vector
+        LIMIT 50
+    """)
+    
+    result = await db.execute(knn_query, {
+        "target_vector": str(user.personality_vector),
+        "user_id": user.id,
+        "city": user.city,
+    })
+    candidates = result.fetchall()
+    
+    # Step 2: Filter — exclude past meetings (90 days) and existing connections
+    from datetime import datetime, timedelta
+    cutoff = datetime.utcnow() - timedelta(days=90)
+    
+    # Get users already met
+    met_query = select(UserHistory.other_user_id).where(
+        UserHistory.user_id == user.id,
+        UserHistory.met_at >= cutoff,
+    )
+    met_result = await db.execute(met_query)
+    met_ids = {row[0] for row in met_result.fetchall()}
+    
+    # Get existing friend connections
+    from app.models.friend_connection import FriendConnection
+    conn_query = select(FriendConnection.friend_id).where(
+        FriendConnection.user_id == user.id,
+        FriendConnection.status.in_(["accepted", "pending"]),
+    )
+    conn_result = await db.execute(conn_query)
+    connected_ids = {row[0] for row in conn_result.fetchall()}
+    
+    exclude_ids = met_ids | connected_ids
+    
+    # Step 3: Score each candidate
+    scored = []
+    for row in candidates:
+        if row[0] in exclude_ids:
+            continue
+        
+        candidate = await db.get(User, row[0])
+        if not candidate:
+            continue
+        
+        score = compatibility(user, candidate)
+        scored.append({
+            "user": candidate,
+            "compatibility": round(min(1.0, score), 2),
+            "shared_interests": list(set(user.interests or []) & set(candidate.interests or [])),
+            "distance_km": round(haversine_km(
+                user.home_lat or 0, user.home_lng or 0,
+                candidate.home_lat or 0, candidate.home_lng or 0,
+            ), 1),
+            "personality_distance": float(row.distance),
+        })
+    
+    # Step 4: Sort by compatibility, return top-N
+    scored.sort(key=lambda x: x["compatibility"], reverse=True)
+    top = scored[:limit]
+    
+    # Step 5: Generate AI reasons for top-3
+    for item in top[:3]:
+        item["ai_reason"] = await generate_friend_reason(user, item["user"], item["compatibility"])
+    
+    return top
+```
+
+### LLM-Generated Compatibility Explanation
+
+```python
+async def generate_friend_reason(user_a, user_b, score) -> str:
+    prompt = (
+        f"User A: interests={user_a.interests}, vibe={user_a.vibe}. "
+        f"User B: interests={user_b.interests}, vibe={user_b.vibe}. "
+        f"Compatibility score: {score:.0%}. "
+        f"Shared interests: {list(set(user_a.interests or []) & set(user_b.interests or []))}. "
+        f"Give ONE friendly sentence under 120 chars explaining why they'd be good friends."
+    )
+    result = await call_nvidia(prompt)
+    if result and result.get("reason"):
+        return result["reason"]
+    # Fallback
+    shared = list(set(user_a.interests or []) & set(user_b.interests or []))
+    if shared:
+        return f"You both love {shared[0]} — and you live nearby"
+    if user_a.vibe == user_b.vibe:
+        return f"Both {user_a.vibe} vibes — instant energy match"
+    return f"Strong personality compatibility at {score:.0%}"
+```
+
+### Database Changes
+
+#### New Tables
+
+```sql
+CREATE TABLE friend_connections (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) NOT NULL,
+    friend_id UUID REFERENCES users(id) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',  -- pending | accepted | rejected
+    compatibility_score NUMERIC(5, 4),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, friend_id)
+);
+
+CREATE INDEX idx_friend_conn_user ON friend_connections(user_id, status);
+CREATE INDEX idx_friend_conn_friend ON friend_connections(friend_id, status);
+
+CREATE TABLE user_blocks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    blocker_id UUID REFERENCES users(id) NOT NULL,
+    blocked_id UUID REFERENCES users(id) NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(blocker_id, blocked_id)
+);
+
+CREATE INDEX idx_user_blocks_blocker ON user_blocks(blocker_id);
+```
+
+#### New ORM Models
+
+```python
+# app/models/friend_connection.py
+class FriendConnection(Base):
+    __tablename__ = "friend_connections"
+    __table_args__ = (UniqueConstraint("user_id", "friend_id"),)
+    
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    friend_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    compatibility_score: Mapped[float | None] = mapped_column(Float(precision=5))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+# app/models/user_block.py
+class UserBlock(Base):
+    __tablename__ = "user_blocks"
+    __table_args__ = (UniqueConstraint("blocker_id", "blocked_id"),)
+    
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    blocker_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    blocked_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+```
+
+### API Design
+
+```
+GET    /api/v1/friends/suggestions      → ?limit=10
+                                          → [
+                                              {
+                                                "user": { id, name, vibe, interests, area },
+                                                "compatibility": 0.92,
+                                                "shared_interests": ["trekking", "photography"],
+                                                "distance_km": 3.4,
+                                                "ai_reason": "Both adventurers with a creative streak — and you live just 3km apart"
+                                              },
+                                              ...
+                                            ]
+
+POST   /api/v1/friends/request/:user_id  → { request_id, status: "pending" }
+                                          Validations: not self, not already friend, not pending, not blocked.
+
+GET    /api/v1/friends/requests           → [{ request_id, from_user: { id, name, vibe }, compatibility, created_at }]
+                                          Incoming pending friend requests.
+
+POST   /api/v1/friends/accept/:request_id → { connection: { friend_id, name, status: "accepted" } }
+
+POST   /api/v1/friends/reject/:request_id → { request_id, status: "rejected" }
+
+GET    /api/v1/friends                    → [{ friend_id, name, vibe, interests, compatibility_score, connected_at }]
+                                          List of accepted friends.
+
+DELETE /api/v1/friends/:friend_id         → { removed: true }
+                                          Removes friend connection (both directions).
+
+POST   /api/v1/friends/block/:user_id     → { blocked: true }
+                                          Block a user. Removes any existing connection. Excludes from future suggestions.
+```
+
+### Frontend Design
+
+#### New Pages
+
+```
+frontend/app/(app-shell)/
+└── friends/
+    ├── page.tsx                      # Friend suggestions (default tab)
+    │                                 # Tabs: Suggestions | My Friends | Requests
+    └── requests/
+        └── page.tsx                  # Friend requests (incoming)
+```
+
+#### New Components
+
+```
+components/friends/
+├── friend-suggestion-card.tsx        # Card: avatar, name, vibe badge, compatibility %, shared interests, ai_reason, "Connect" button
+├── friend-list.tsx                   # List of accepted friends with vibe and area info
+├── friend-request-card.tsx           # Incoming request: from_user info, Accept/Reject buttons
+└── compatibility-badge.tsx           # Color-coded badge: ≥85% green, 70-84% yellow, <70% neutral
+```
+
+#### Navigation Changes
+
+Add "Friends" tab to MobileTabBar and DesktopSidebar:
+
+```typescript
+// MobileTabBar — add to tabs
+{ href: "/friends", label: "Friends", icon: HeartHandshake }
+
+// DesktopSidebar — add to navItems
+{ href: "/friends", label: "Friend Match", icon: HeartHandshake }
+```
+
+### Schemas
+
+```python
+# app/schemas/friend.py
+class FriendSuggestionResponse(BaseModel):
+    user: UserBriefResponse
+    compatibility: float
+    shared_interests: list[str]
+    distance_km: float
+    ai_reason: str | None = None
+
+class FriendRequestResponse(BaseModel):
+    id: uuid.UUID
+    from_user: UserBriefResponse
+    compatibility_score: float | None
+    created_at: datetime
+
+class FriendResponse(BaseModel):
+    id: uuid.UUID
+    friend: UserBriefResponse
+    compatibility_score: float | None
+    connected_at: datetime
+
+class UserBriefResponse(BaseModel):
+    id: uuid.UUID
+    name: str | None
+    vibe: str | None
+    interests: list[str]
+    home_area: str | None
+    personality_vector: list[float] | None = None  # only visible to friends
+```
+
+### Friend Matching Service
+
+```python
+# New file: app/services/friend_matching.py
+
+# Implements:
+# - compatibility(user_a, user_b) -> float
+# - get_suggestions(user, db, limit) -> list[dict]
+# - generate_friend_reason(user_a, user_b, score) -> str
+# - interest_overlap(a, b) -> float
+# - vibe_compatibility(a, b) -> float  
+# - location_proximity(a, b) -> float
+# - complementary_diversity(a, b) -> float
+# - haversine_km(lat1, lng1, lat2, lng2) -> float
+```
+
+### Redis Key Additions
+
+```
+friends:{user_id}:suggestions     → List (JSON array, TTL=600)
+friends:{user_id}:requests        → Set (request IDs, TTL=300)
+```
+
+### pgvector Index Optimization
+
+```sql
+-- Create IVFFlat index for faster KNN search
+-- Should be created after the table has data (at least 100 rows)
+CREATE INDEX idx_users_personality_ivfflat
+    ON users
+    USING ivfflat (personality_vector vector_cosine_ops)
+    WITH (lists = 10);
+
+-- Fallback: exact nearest neighbor scan (works even without index)
+-- SELECT ... ORDER BY personality_vector <=> :target_vector LIMIT 50
+```
+
+For demo with 20 users: IVFFlat index is overkill. Exact KNN via `<=>` operator is instant (< 1ms). The index is prepped but not created in migration (requires data to exist first).
+
+### Demo Scene: Friend Matching (45s add-on)
+
+After the Communities scene: "And when Priya wants to find *her people* — the AI knows. It scans 20 personality vectors via pgvector KNN, scores 4 compatibility dimensions, and surfaces 3 people she'd truly click with. Rahul at 92% — both adventurers, both trekkers, both in Indiranagar. One tap sends a friend request. This isn't matching for an activity. This is matching for life."
+
+---
+
+## Updated Architecture Diagram (Data Layer)
+
+```
+┌──────────────────────┴───────────────────────────────────┐
+│                    DATA LAYER                                │
+│                                                             │
+│  PostgreSQL + pgvector                                      │
+│  ├── users (personality_vector VECTOR(5))                   │
+│  ├── activities (tags TEXT[], recommendations)              │
+│  ├── groups (group_type, interest_tags for communities)     │
+│  ├── group_members, chat_messages                           │
+│  ├── sos_events, hosts, venues, user_history                │
+│  ├── friend_connections (NEW)                               │
+│  ├── user_blocks (NEW)                                      │
+│  └── Indexes: IVFFlat on personality_vector, GIN on tags    │
+│                                                             │
+│  Redis                                                      │
+│  ├── chat:{group_id}:messages  (Sorted Set, community=noTTL)│
+│  ├── match:{activity_id}:*     (matching progress/result)   │
+│  ├── rec:{user_id}:*           (recommendations + reasons)  │
+│  ├── friends:{user_id}:*       (suggestions + requests)     │
+│  ├── community:{id}:*          (member set + meta cache)    │
+│  ├── ws:user:{id} / ws:group:{id}                           │
+│  ├── sos:{sos_id}:status       (Hash, ephemeral)            │
+│  ├── location:{group_id}:{user} (Hash, short TTL)           │
+│  └── ratelimit:{user}:{endpoint} (Counter, short TTL)       │
+│                                                             │
+│  External APIs                                              │
+│  ├── Supabase Auth (phone OTP)                              │
+│  ├── Google Maps (Distance Matrix, Geocoding, Places)       │
+│  ├── NVIDIA Nemotron (personality, rec reasons, friend)     │
+│  └── Twilio (SMS fallback for SOS alerts)                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Updated API Reference (New Endpoints)
+
+### Communities
+
+```
+GET    /api/v1/communities              → ?interest=&cursor=&limit=10
+                                          → PaginatedResponse[CommunityResponse]
+                                          Browse by interest tag, sorted by member count
+
+GET    /api/v1/communities/suggested    → ?limit=5 → List of communities matching user interests  
+GET    /api/v1/communities/:id          → CommunityResponse with members + is_member flag
+POST   /api/v1/communities              → { name, interest_tags, description, rules? } → CommunityResponse
+POST   /api/v1/communities/:id/join     → { joined: true, member_count: N }
+POST   /api/v1/communities/:id/leave    → { left: true, member_count: N }
+GET    /api/v1/communities/:id/chat/history → Paginated chat messages (persistent, no TTL)
+DELETE /api/v1/communities/:id          → { deleted: true }  (founder/admin only)
+```
+
+### Recommendations
+
+```
+GET    /api/v1/activities/recommended   → ?limit=5
+                                          → [
+                                              {
+                                                "activity": ActivityResponse,
+                                                "score": 0.92,
+                                                "ai_reason": "Your trekking passion meets the perfect sunrise...",
+                                                "score_breakdown": { interest_match, location_score, personality_fit, social_proof }
+                                              },
+                                              ...
+                                            ]
+```
+
+### Friends
+
+```
+GET    /api/v1/friends/suggestions      → ?limit=10
+                                          → [FriendSuggestionResponse]  (compatibility, shared_interests, ai_reason)
+
+POST   /api/v1/friends/request/:user_id → { request_id, status: "pending" }
+GET    /api/v1/friends/requests         → [FriendRequestResponse]  (incoming pending)
+POST   /api/v1/friends/accept/:request_id → { connection: { friend_id, status: "accepted" } }
+POST   /api/v1/friends/reject/:request_id → { request_id, status: "rejected" }
+GET    /api/v1/friends                  → [FriendResponse]  (accepted friends)
+DELETE /api/v1/friends/:friend_id       → { removed: true }
+POST   /api/v1/friends/block/:user_id   → { blocked: true }
+```
+
+---
+
+## Updated Project Structure
+
+### Backend New/Changed Files
+
+```
+backend/app/
+├── api/v1/
+│   ├── communities.py          # NEW — community CRUD + join/leave
+│   ├── friends.py              # NEW — suggestions, requests, connections, blocks
+│   └── activities.py           # CHANGED — add recommended query param
+├── models/
+│   ├── group.py                # CHANGED — add community columns
+│   ├── activity.py             # CHANGED — add tags column
+│   ├── friend_connection.py    # NEW — FriendConnection ORM
+│   └── user_block.py           # NEW — UserBlock ORM
+├── schemas/
+│   ├── community.py            # NEW — CommunityResponse, CreateCommunityRequest
+│   ├── friend.py               # NEW — FriendSuggestion, FriendRequest, FriendResponse
+│   └── activity.py             # CHANGED — add ActivityRecommendationResponse
+├── services/
+│   ├── recommendations.py      # NEW — scoring engine + LLM reasons
+│   └── friend_matching.py      # NEW — compatibility scoring + KNN pipeline
+├── alembic/versions/
+│   └── 20240507_enhanced_features.py  # NEW — columns + new tables
+└── scripts/seed.py             # CHANGED — add community seed + activity tags
+```
+
+### Frontend New/Changed Files
+
+```
+frontend/
+├── app/(app-shell)/
+│   ├── communities/            # NEW — community discovery + detail
+│   │   ├── page.tsx
+│   │   └── [id]/
+│   │       ├── page.tsx
+│   │       └── chat/page.tsx
+│   ├── friends/                # NEW — suggestions + my friends + requests
+│   │   ├── page.tsx
+│   │   └── requests/page.tsx
+│   └── activities/
+│       └── page.tsx            # CHANGED — add recommended section
+├── components/
+│   ├── communities/            # NEW
+│   │   ├── community-card.tsx
+│   │   ├── community-feed.tsx
+│   │   ├── community-detail.tsx
+│   │   └── create-community-form.tsx
+│   ├── friends/                # NEW
+│   │   ├── friend-suggestion-card.tsx
+│   │   ├── friend-list.tsx
+│   │   └── friend-request-card.tsx
+│   └── activities/
+│       ├── recommended-carousel.tsx  # NEW
+│       └── recommended-card.tsx      # NEW
+├── components/layout/
+│   ├── mobile-tab-bar.tsx      # CHANGED — add Communities + Friends tabs
+│   └── desktop-sidebar.tsx     # CHANGED — add Communities + Friend Match nav items
+├── lib/
+│   ├── query-keys.ts           # CHANGED — add communities + friends keys
+│   └── constants.ts            # CHANGED — add INTEREST_TAGS, VIBE_OPTIONS
+├── hooks/
+│   └── use-friend-matching.ts  # NEW — fetch suggestions, send/accept requests
+└── stores/
+    └── ui-store.ts             # CHANGED — add community filter state
+```
+
+---
+
+## Updated State Management
+
+### New Query Keys
+
+```typescript
+const queryKeys = {
+  // ... existing keys ...
+  
+  communities: {
+    all:       ['communities'] as const,
+    list:      (filters: { interest?: string }) => ['communities', 'list', filters] as const,
+    detail:    (id: string) => ['communities', 'detail', id] as const,
+    suggested: ['communities', 'suggested'] as const,
+    members:   (id: string) => ['communities', 'members', id] as const,
+  } as const,
+  
+  friends: {
+    suggestions: ['friends', 'suggestions'] as const,
+    requests:    ['friends', 'requests'] as const,
+    list:        ['friends', 'list'] as const,
+  } as const,
+  
+  recommendations: {
+    forUser: ['recommendations', 'user'] as const,
+  } as const,
+};
+```
+
+---
+
+## Updated 24-Hour Build Strategy
+
+### Phase 2.5: Enhanced Features (Insert between Phase 2 and Phase 3)
+
+**Priority ordering and timing within 24 hours:**
+
+All three features are designed to be built **incrementally on top of existing infrastructure** — not from scratch.
+
+| # | Feature | Build Time | Dependencies | Demo Scene |
+|---|---|---|---|---|
+| 1 | Interest-Based Communities | ~90 min | Groups table, GroupMember, chat WebSocket | 45s demo add-on |
+| 2 | AI Friend Matching | ~75 min | Personality vectors, pgvector, scoring.py | 45s demo add-on |
+| 3 | Event Recommendations | ~60 min | Activity tags, User model, LLM onboarding | 30s demo add-on |
+
+**Build order rationale:**
+1. Communities first — extends existing Group infrastructure, adds 2-3 API endpoints
+2. Friend matching second — most technically impressive, heavy reuse of scoring infrastructure
+3. Recommendations last — lower priority, simpler implementation, great polish item
+
+### Implementation Checklist
+
+#### Communities (90 min)
+- [ ] Add migration: group columns (group_type, interest_tags, description, etc.) + index
+- [ ] Update Group model with new columns
+- [ ] Create `/api/v1/communities` router with 7 endpoints
+- [ ] Create Community schemas
+- [ ] Create `/communities` page — discovery feed with interest filter
+- [ ] Create `/communities/:id` page — detail + member list
+- [ ] Create `/communities/:id/chat` — reuse chat window component
+- [ ] Add Communities tab to MobileTabBar + DesktopSidebar
+- [ ] Seed 5 communities (Weekend Trekkers, Board Gamers, Yoga Circle, etc.)
+- [ ] Test: join, chat, leave, discovery
+
+#### Friend Matching (75 min)
+- [ ] Add migration: friend_connections + user_blocks tables
+- [ ] Create FriendConnection + UserBlock ORM models
+- [ ] Implement `compatibility()` scoring function in `services/friend_matching.py`
+- [ ] Implement KNN pipeline with pgvector `<->` operator
+- [ ] Implement LLM friend reason generation
+- [ ] Create `/api/v1/friends` router with 9 endpoints
+- [ ] Create Friend schemas
+- [ ] Create `/friends` page — suggestions tab + my friends tab
+- [ ] Create `/friends/requests` page — incoming requests
+- [ ] Add Friend Match tab to MobileTabBar + DesktopSidebar
+- [ ] Seed: pre-compute compatibility for demo persona Priya
+- [ ] Test: suggestions accuracy, request/accept flow
+
+#### Recommendations (60 min)
+- [ ] Add migration: activities.tags column
+- [ ] Update Activity model with tags column
+- [ ] Implement `get_recommendations()` in `services/recommendations.py`
+- [ ] Implement 4 scoring dimensions (interest, location, personality, social)
+- [ ] Implement LLM reason generation for top-3 recommendations
+- [ ] Add `/api/v1/activities/recommended` endpoint
+- [ ] Create RecommendedCarousel + RecommendedCard components
+- [ ] Integrate into `/activities` page at top
+- [ ] Update seed data: add tags to all 15 activities
+- [ ] Cache in Redis (rec:{user_id}:*)
+- [ ] Test: score accuracy, caching, LLM fallback
+
+---
+
+## Updated Dependencies & Sequencing
+
+```
+Phase 1: Foundation (Hour 0-4)
+  └── DB schema + Auth + Project setup
+       └── Includes 2 new tables (friend_connections, user_blocks)
+       └── Includes 4 new columns (groups, activities)
+
+Phase 2: Core Backend (Hour 4-10)
+  ├── Activity API ── parallel with ──→ Matching Engine + Recommendations Engine
+  ├── Group API + Community API ── built together (shared model)
+  └── Friend API ── depends on personality vectors (already stored in DB)
+
+Phase 3: AI Onboarding (Hour 10-14)
+  └── LLM integration (also serves rec reasons + friend matching reasons)
+
+Phase 4: Real-Time Features (Hour 14-20)
+  ├── Community chat (persistent variant of activity chat)
+  └── Friend request notifications (Toaster, not full push)
+
+Phase 5: Frontend Polish (Hour 20-22)
+  ├── Communities pages (discovery, detail, chat, create form)
+  ├── Friend pages (suggestions, friends, requests)
+  ├── Recommendations (carousel + cards on activities page)
+  └── Updated navigation (5 or 6 tabs)
+
+Phase 6: Seed + Rehearsal (Hour 22-24)
+  └── Seed: 5 communities, 20 users with compatibility scores, 15 activities with tags
+  └── Rehearse new demo scenes (communities, friends, recommendations)
+```
+
+---
+
+## Updated Scope Exclusions
+
+- Complete venue management (seeded venue data) — unchanged
+- User-created activities (15-20 seeded Bangalore activities) — unchanged
+- Push notifications (Web Push API for reminder only in demo) — friend requests use in-app Toaster
+- Video/voice calling — unchanged
+- Community content posts / feed (for demo: chat only)
+- Real-time friend request push notifications (polling OK for demo)
+- External event integration (Meetup, Eventbrite) — beyond hackathon scope
+- Recommendation engine A/B testing or ML training — static scoring for demo
+- Friend matching collaborative filtering from interaction data — needs training data
