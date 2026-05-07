@@ -71,7 +71,7 @@ def location_score(user: User, activity: Activity) -> float:
 
 
 def personality_fit(user: User, activity: Activity) -> float:
-    if not user.personality_vector or len(user.personality_vector) != 5:
+    if user.personality_vector is None or len(user.personality_vector) != 5:
         return 0.5
 
     ideal = CATEGORY_IDEAL_VECTORS.get(activity.category)
@@ -90,7 +90,7 @@ async def social_proof(user: User, activity: Activity, db: AsyncSession) -> floa
     if join_count == 0:
         return 0.5
 
-    if not user.personality_vector or len(user.personality_vector) != 5:
+    if user.personality_vector is None or len(user.personality_vector) != 5:
         return 0.5
 
     pv = list(user.personality_vector)

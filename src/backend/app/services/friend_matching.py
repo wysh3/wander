@@ -155,7 +155,7 @@ async def get_friend_suggestions(user: User, db: AsyncSession, limit: int = 10) 
 
     exclude_ids = met_ids | connected_ids | blocked_ids | blocked_by_ids | {user.id}
 
-    if user.personality_vector and len(user.personality_vector) == 5:
+    if user.personality_vector is not None and len(user.personality_vector) == 5:
         vec_str = str(list(user.personality_vector))
         knn_query = text("""
             SELECT id, name, interests, vibe, home_lat, home_lng, travel_radius_km,
