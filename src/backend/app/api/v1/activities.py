@@ -27,7 +27,7 @@ async def list_activities(
     lat: float | None = Query(None, description="User's latitude for distance-aware sorting"),
     lng: float | None = Query(None, description="User's longitude for distance-aware sorting"),
     radius_km: float | None = Query(None, ge=1, le=100, description="Max distance radius filter"),
-    sort_by: str = Query("distance", regex="^(distance|date)$"),
+    sort_by: str = Query("distance", pattern="^(distance|date)$"),
     db: AsyncSession = Depends(get_db),
 ):
     """

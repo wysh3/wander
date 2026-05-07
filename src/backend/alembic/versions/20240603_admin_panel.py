@@ -16,6 +16,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # ── User role ──
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user'")
+
     # ── Geolocation fields (from feature/geolocation branch) ──
     op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS live_lat DOUBLE PRECISION")
     op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS live_lng DOUBLE PRECISION")
@@ -92,6 +95,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    op.execute("ALTER TABLE users DROP COLUMN IF EXISTS role")
     op.execute("DROP INDEX IF EXISTS idx_flagged_users_status")
     op.execute("DROP INDEX IF EXISTS idx_users_active_ready")
     op.execute("DROP INDEX IF EXISTS idx_sos_resolution_status")
