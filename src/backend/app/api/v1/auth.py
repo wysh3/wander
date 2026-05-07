@@ -73,9 +73,13 @@ async def verify_otp_endpoint(
     if not user:
         import uuid
 
+        # Assign admin role for the demo admin phone
+        is_admin = body.phone == "+919999999999"
+
         user = User(
             supabase_uid=str(uuid.uuid4()),
             phone=body.phone,
+            role="admin" if is_admin else "user",
         )
         db.add(user)
         await db.commit()
