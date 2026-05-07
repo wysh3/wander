@@ -129,6 +129,32 @@ export function sendAdminNotification(data: { title: string; body: string; targe
   });
 }
 
+// Push Notifications
+export function fetchPushSubscriptions() {
+  return apiFetch<any[]>("/notifications/push/subscriptions");
+}
+
+export function subscribePush(data: { endpoint: string; p256dh_key: string; auth_key: string; user_agent?: string }) {
+  return apiFetch<any>("/notifications/push/subscribe", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function unsubscribePush(endpoint?: string) {
+  const qs = endpoint ? `?endpoint=${encodeURIComponent(endpoint)}` : "";
+  return apiFetch<any>(`/notifications/push/subscribe${qs}`, {
+    method: "DELETE",
+  });
+}
+
+export function sendPushNotification(data: { title: string; body: string; url?: string; target_user_id?: string }) {
+  return apiFetch<any>("/notifications/push/send", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
 // Platform Report
 export function fetchPlatformReport() {
   return apiFetch<any>(`${ADMIN}/report/platform`);

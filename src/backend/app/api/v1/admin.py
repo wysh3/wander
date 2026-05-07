@@ -940,6 +940,21 @@ async def send_notification(
     admin_user: User = Depends(require_admin),
 ):
     now = datetime.utcnow()
+
+    delivered = 0
+    if not body.scheduled_at:
+        from app.services.push_notification import send_push_to_all, send_push_to_event_attendees, send_push_to_group
+
+        if body.target_type == "all":
+            sent, failed = await send_push_to_all(db, body.title, body.body)
+            delivered = sent
+        elif body.target_type == "event" and body.target_id:
+            sent, failed = await send_push_to_event_attendees(db, str(body.target_id), body.title, body.body)
+            delivered = sent
+        elif body.target_type == "group" and body.target_id:
+            sent, failed = await send_push_to_group(db, str(body.target_id), body.title, body.body)
+            delivered = sent
+
     notif = AdminNotification(
         title=body.title,
         body=body.body,
@@ -947,6 +962,7 @@ async def send_notification(
         target_id=body.target_id,
         scheduled_at=body.scheduled_at,
         sent_at=now if not body.scheduled_at else None,
+        delivered_count=delivered,
         created_by=admin_user.id,
     )
     db.add(notif)
@@ -956,7 +972,7 @@ async def send_notification(
     return NotificationResponse(
         id=notif.id, title=notif.title, body=notif.body,
         target_type=notif.target_type, target_id=notif.target_id,
-        sent_at=notif.sent_at, delivered_count=0, opened_count=0,
+        sent_at=notif.sent_at, delivered_count=notif.delivered_count, opened_count=0,
         created_at=notif.created_at,
     )
 

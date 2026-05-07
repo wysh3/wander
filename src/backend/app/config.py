@@ -35,6 +35,10 @@ class Settings(BaseSettings):
 
     ENVIRONMENT: str = "development"
 
+    VAPID_PUBLIC_KEY: str = ""
+    VAPID_PRIVATE_KEY: str = ""
+    VAPID_CLAIM_EMAIL: str = "admin@wander.app"
+
     class Config:
         env_file = ".env"
 
