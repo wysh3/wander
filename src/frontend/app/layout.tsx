@@ -1,10 +1,16 @@
 "use client";
 
-import "./globals.css";
+import "@/app/globals.css";
 
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Toaster } from "sonner";
+
+const jakarta = Plus_Jakarta_Sans({ 
+  subsets: ["latin"],
+  variable: "--font-jakarta"
+});
 
 function makeQueryClient() {
   return new QueryClient({
@@ -40,7 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <title>Wander — Go Outside</title>
       </head>
-      <body className="min-h-screen bg-background antialiased">
+      <body className={`${jakarta.variable} font-sans min-h-screen bg-background antialiased selection:bg-primary/20 selection:text-primary`}>
         <QueryClientProvider client={queryClient}>
           {children}
           <Toaster position="bottom-center" />
