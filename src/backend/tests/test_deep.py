@@ -147,6 +147,7 @@ async def seed_user(db: AsyncSession, phone="+919999000001", name="TestUser", **
         supabase_uid=f"test-uid-{phone[-4:]}",
         phone=phone,
         name=name,
+        role=kwargs.get("role", "user"),
         verification_status=kwargs.get("verification_status", "verified"),
         onboarding_completed=kwargs.get("onboarding_completed", True),
         personality_vector=kwargs.get("personality_vector", _random_vector()),
@@ -248,7 +249,7 @@ async def client():
 @pytest_asyncio.fixture
 async def seeded(db_session):
     """Full seed: user, venue, activity, group, host."""
-    user = await seed_user(db_session)
+    user = await seed_user(db_session, role="admin")
     await db_session.flush()
     await db_session.commit()
 
@@ -403,11 +404,11 @@ class TestMatching:
 class TestGroups:
     async def test_get_group(self, client: AsyncClient, seeded):
         gid = str(seeded["group"].id)
-        r = await client.get(f"/api/v1/groups/{gid}")
+        r = await client.get(f"/api/v1/groups/{gid}", headers={"Authorization": f"Bearer {seeded['token']}"})
         assert r.status_code == 200
 
-    async def test_get_group_404(self, client: AsyncClient):
-        r = await client.get(f"/api/v1/groups/{uuid.uuid4()}")
+    async def test_get_group_404(self, client: AsyncClient, seeded):
+        r = await client.get(f"/api/v1/groups/{uuid.uuid4()}", headers={"Authorization": f"Bearer {seeded['token']}"})
         assert r.status_code == 404
 
     async def test_rate_group(self, client: AsyncClient, seeded):
@@ -488,15 +489,15 @@ class TestHost:
 
 class TestAdmin:
     async def test_admin_sos_events(self, client: AsyncClient, seeded):
-        r = await client.get("/api/v1/admin/sos-events", headers={"Authorization": f"Bearer {seeded['token']}"})
+        r = await client.get("/api/v1/admin/moderation/sos", headers={"Authorization": f"Bearer {seeded['token']}"})
         assert r.status_code == 200
 
     async def test_admin_verifications(self, client: AsyncClient, seeded):
-        r = await client.get("/api/v1/admin/verifications", headers={"Authorization": f"Bearer {seeded['token']}"})
+        r = await client.get("/api/v1/admin/users?verification_status=pending", headers={"Authorization": f"Bearer {seeded['token']}"})
         assert r.status_code == 200
 
     async def test_admin_activity_logs(self, client: AsyncClient, seeded):
-        r = await client.get("/api/v1/admin/activity-logs", headers={"Authorization": f"Bearer {seeded['token']}"})
+        r = await client.get("/api/v1/admin/events", headers={"Authorization": f"Bearer {seeded['token']}"})
         assert r.status_code == 200
 
 
