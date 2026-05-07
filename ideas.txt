@@ -1,6 +1,11 @@
-1. auto local events generations admin side
-2. interest onboarding
-3. fix match making
-4. feedback
-5. add emergency contact option
-6. push notifications
+badges / streaks
+
+report button
+
+ reduce subscription upon streaks
+
+women only
+
+ referral system
+
+add emergency contact option

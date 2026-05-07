@@ -3,16 +3,19 @@
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
-import { Calendar, MapPin, Clock, Users, Navigation, Footprints, Car, Target, Zap, ArrowLeft, Share, Heart, ShieldCheck, ShieldOff } from "lucide-react";
+import { Calendar, MapPin, Clock, Users, Navigation, Footprints, Car, Target, Zap, ArrowLeft, Share, Heart, ShieldCheck, ShieldOff, MoreVertical } from "lucide-react";
 import { format } from "date-fns";
+import { useState } from "react";
 import { useLocationStore } from "@/stores/location-store";
 import { haversineKm, formatDistance } from "@/lib/geo-utils";
 import { getActivityImage } from "@/lib/images";
+import { ReportDialog } from "@/components/shared/report-dialog";
 
 export default function ActivityDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { lat: userLat, lng: userLng } = useLocationStore();
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   const { data: activity, isLoading } = useQuery<any>({
     queryKey: ["activities", "detail", id],
@@ -85,6 +88,11 @@ export default function ActivityDetailPage() {
         <div className="flex items-center gap-4 text-[#1e3a5f]/40">
           <Share className="w-5 h-5 cursor-pointer hover:text-[#1e3a5f]" />
           <Heart className="w-5 h-5 cursor-pointer hover:text-red-500" />
+          <MoreVertical 
+            className="w-5 h-5 cursor-pointer hover:text-red-500 ml-2" 
+            onClick={() => setIsReportOpen(true)}
+            aria-label="Report Activity"
+          />
         </div>
       </div>
 
@@ -220,6 +228,13 @@ export default function ActivityDetailPage() {
           <span>Safe. Verified. Phone-Free.</span>
         </div>
       </div>
+
+      <ReportDialog 
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        targetId={id as string}
+        targetType="activity"
+      />
     </div>
   );
 }

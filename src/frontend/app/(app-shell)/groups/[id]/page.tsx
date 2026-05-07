@@ -2,13 +2,16 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { apiFetch } from "@/lib/api-client";
-import { Calendar, MapPin, ArrowLeft, Info, MessageCircle, Star, ShieldCheck } from "lucide-react";
+import { Calendar, MapPin, ArrowLeft, Info, MessageCircle, Star, ShieldCheck, MoreVertical } from "lucide-react";
 import { format } from "date-fns";
+import { ReportDialog } from "@/components/shared/report-dialog";
 
 export default function GroupDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const [reportTargetId, setReportTargetId] = useState<string | null>(null);
 
   const { data: group, isLoading } = useQuery<any>({
     queryKey: ["groups", "detail", id],
@@ -105,7 +108,7 @@ export default function GroupDetailPage() {
             {group.members?.map((m: any, idx: number) => {
               const isLast = idx === group.members.length - 1;
               return (
-                <div key={m.id} className={`p-4 flex items-center gap-4 ${!isLast ? 'border-b border-gray-50' : ''} hover:bg-gray-50 transition-colors`}>
+                <div key={m.id} className={`p-4 flex items-center gap-4 ${!isLast ? 'border-b border-gray-50' : ''} hover:bg-gray-50 transition-colors group cursor-default`}>
                   <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
                     <img src={`https://i.pravatar.cc/150?u=${m.id}`} alt={m.name || ""} className="w-full h-full object-cover" />
                   </div>
@@ -122,6 +125,14 @@ export default function GroupDetailPage() {
                       Newbie
                     </div>
                   )}
+                  <button 
+                    onClick={() => setReportTargetId(m.id)}
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 sm:opacity-100"
+                    aria-label="Report User"
+                    title="Report this user"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
                 </div>
               );
             })}
@@ -137,6 +148,13 @@ export default function GroupDetailPage() {
         <MessageCircle className="w-5 h-5" />
         Open Group Chat
       </button>
+
+      <ReportDialog 
+        isOpen={!!reportTargetId}
+        onClose={() => setReportTargetId(null)}
+        targetId={reportTargetId || ""}
+        targetType="user"
+      />
     </div>
   );
 }

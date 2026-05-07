@@ -3,6 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
+import { useState } from "react";
+import { ReportDialog } from "@/components/shared/report-dialog";
 import { 
   User as UserIcon, 
   MapPin, 
@@ -14,12 +16,14 @@ import {
   Calendar,
   ChevronRight,
   Sparkles,
-  Camera
+  Camera,
+  MoreVertical
 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function ProfilePage() {
   const { user } = useAuthStore();
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   const { data: profile, isLoading } = useQuery<any>({
     queryKey: ["profile", user?.id],
@@ -47,6 +51,16 @@ export default function ProfilePage() {
         animate={{ opacity: 1, y: 0 }}
         className="relative bg-white rounded-[40px] p-8 text-center border border-gray-100 shadow-sm overflow-hidden"
       >
+        <div className="absolute top-4 right-4 z-20">
+          <button 
+            onClick={() => setIsReportOpen(true)}
+            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors flex items-center justify-center opacity-70 hover:opacity-100"
+            aria-label="Report User"
+            title="Report this user"
+          >
+            <MoreVertical className="w-5 h-5" />
+          </button>
+        </div>
         <div className="absolute top-0 right-0 w-32 h-32 bg-[#eaf4f4] rounded-bl-full -z-0 opacity-50"></div>
         
         <div className="relative z-10">
@@ -135,6 +149,13 @@ export default function ProfilePage() {
           </div>
         ))}
       </motion.div>
+
+      <ReportDialog 
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        targetId={user?.id || ""}
+        targetType="user"
+      />
     </div>
   );
 }
