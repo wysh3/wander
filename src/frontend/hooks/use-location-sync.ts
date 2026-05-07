@@ -44,7 +44,7 @@ export function useLocationSync(options: UseLocationSyncOptions = {}) {
     refresh,
   } = useGeolocation({
     watchEnabled: enabled,
-    highAccuracy: true,
+    highAccuracy: false,
     minUpdateIntervalMs: syncIntervalMs,
   });
 

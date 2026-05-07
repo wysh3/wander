@@ -41,8 +41,8 @@ export function useGeolocation(
 ): UseGeolocationReturn {
   const {
     watchEnabled = true,
-    highAccuracy = true,
-    timeout = 15000,
+    highAccuracy = false,
+    timeout = 30000,
     maxAge = 60000,
     minUpdateIntervalMs = 10000,
   } = options;
