@@ -23,6 +23,7 @@ describe("auth-store", () => {
       name: "Test User",
       verification_status: "verified",
       onboarding_completed: true,
+      role: "user",
     });
 
     const updated = useAuthStore.getState();
@@ -40,6 +41,7 @@ describe("auth-store", () => {
       name: "X",
       verification_status: "unverified",
       onboarding_completed: false,
+      role: "user",
     });
 
     const authed = useAuthStore.getState();
@@ -60,6 +62,7 @@ describe("auth-store", () => {
       name: "Old",
       verification_status: "unverified",
       onboarding_completed: false,
+      role: "user",
     });
     store.setUser({
       id: "u1",
@@ -67,6 +70,7 @@ describe("auth-store", () => {
       name: "New Name",
       verification_status: "verified",
       onboarding_completed: true,
+      role: "user",
     });
 
     const state = useAuthStore.getState();
@@ -83,6 +87,7 @@ describe("auth-store", () => {
       name: "Persist",
       verification_status: "verified",
       onboarding_completed: true,
+      role: "user",
     });
 
     const raw = localStorage.getItem("wander-auth");
