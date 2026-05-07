@@ -10,6 +10,7 @@ from app.models.activity import Activity
 from app.models.user import User
 from app.schemas.activity import ActivityResponse, ActivityListParams, JoinActivityResponse
 from app.schemas.common import PaginatedResponse
+from app.services.recommendations import get_recommendations
 
 router = APIRouter()
 
@@ -49,6 +50,15 @@ async def list_activities(
         items=[ActivityResponse.model_validate(a) for a in items],
         next_cursor=next_cursor,
     )
+
+
+@router.get("/recommended")
+async def get_recommended_activities(
+    limit: int = Query(5, ge=1, le=20),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await get_recommendations(current_user, db, limit)
 
 
 @router.get("/{activity_id}", response_model=ActivityResponse)
