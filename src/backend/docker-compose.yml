@@ -19,6 +19,9 @@ services:
       - redis
 
   db:
+    # pgvector image with vector extension. For PostGIS spatial queries,
+    # swap to: postgis/postgis:16-3.4 (or build a custom image with both).
+    # If PostGIS is unavailable, the app falls back to Haversine + Redis GEO.
     image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: postgres

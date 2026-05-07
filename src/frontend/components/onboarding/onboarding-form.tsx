@@ -10,8 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
+import { LocationPermission } from "@/components/location/location-permission";
 
-type Step = "interests" | "energy" | "availability";
+type Step = "interests" | "energy" | "availability" | "location";
 
 interface Interest {
   id: string;
@@ -81,19 +82,22 @@ export function OnboardingForm() {
     ? interests.length > 0
     : step === "energy"
       ? !!energy
-      : availability.length > 0;
+      : step === "availability"
+        ? availability.length > 0
+        : true; // location is optional
 
   return (
     <div className="flex flex-col h-full max-w-lg mx-auto px-4">
       {/* Progress */}
       <div className="flex gap-1 py-4">
-        {(["interests", "energy", "availability"] as Step[]).map((s, i) => (
+        {(["interests", "energy", "availability", "location"] as Step[]).map((s, i) => (
           <div
             key={s}
             className={`h-1 flex-1 rounded-full transition-colors ${
               (step === "interests" && i === 0) ||
               (step === "energy" && i <= 1) ||
-              (step === "availability" && i <= 2)
+              (step === "availability" && i <= 2) ||
+              (step === "location" && i <= 3)
                 ? "bg-wander-teal"
                 : "bg-muted"
             }`}
@@ -185,33 +189,40 @@ export function OnboardingForm() {
               </div>
             </>
           )}
+
+          {/* Step: Location */}
+          {step === "location" && (
+            <LocationPermission onComplete={() => handleComplete()} />
+          )}
         </motion.div>
       </AnimatePresence>
 
       {/* Bottom buttons */}
       <div className="py-4 flex gap-3">
-        {step !== "interests" && (
+        {step !== "interests" && step !== "location" && (
           <Button
             variant="outline"
             onClick={() =>
-              setStep(step === "energy" ? "interests" : "energy")
+              setStep(step === "energy" ? "interests" : step === "availability" ? "energy" : "availability")
             }
             className="flex-1"
           >
             Back
           </Button>
         )}
-        <Button
-          className="flex-1"
-          disabled={!canNext || loading}
-          onClick={() => {
-            if (step === "interests") setStep("energy");
-            else if (step === "energy") setStep("availability");
-            else handleComplete();
-          }}
-        >
-          {loading ? "Saving..." : step === "availability" ? "Finish" : "Next"}
-        </Button>
+        {step !== "location" && (
+          <Button
+            className="flex-1"
+            disabled={!canNext || loading}
+            onClick={() => {
+              if (step === "interests") setStep("energy");
+              else if (step === "energy") setStep("availability");
+              else if (step === "availability") setStep("location");
+            }}
+          >
+            {loading ? "Saving..." : "Next"}
+          </Button>
+        )}
       </div>
     </div>
   );

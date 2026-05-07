@@ -15,11 +15,12 @@ interface MatchingVisualizationProps {
   phase: "idle" | "filtering" | "constraints" | "solving" | "done";
   progress: number;
   result: any | null;
+  matchStats?: { geo_method?: string; search_radius_km?: number };
 }
 
-export function MatchingVisualization({ phase, progress, result }: MatchingVisualizationProps) {
+export function MatchingVisualization({ phase, progress, result, matchStats }: MatchingVisualizationProps) {
   const steps = [
-    { key: "filtering", label: "Filtering by location & availability", icon: Filter },
+    { key: "filtering", label: `Geo-filtering by location${matchStats?.search_radius_km ? ` (${matchStats.search_radius_km}km)` : ""}`, icon: Filter },
     { key: "constraints", label: "Applying 6 constraint dimensions", icon: Users },
     { key: "solving", label: "CP-SAT solver optimizing groups", icon: Brain },
     { key: "done", label: "Groups formed", icon: CheckCircle2 },

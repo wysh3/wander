@@ -5,12 +5,16 @@ import { DesktopSidebar } from "@/components/layout/desktop-sidebar";
 import { SafeAreaTop } from "@/components/layout/safe-area-top";
 import { SafeAreaBottom } from "@/components/layout/safe-area-bottom";
 import { useAuthStore } from "@/stores/auth-store";
+import { useLocationSync } from "@/hooks/use-location-sync";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function AppShellLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
+
+  // Start location tracking once authenticated
+  useLocationSync({ enabled: isAuthenticated });
 
   useEffect(() => {
     if (!isAuthenticated) {

@@ -1,14 +1,16 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import structlog
 import time
+import asyncio
 
 from app.config import get_settings
 from app.core.exceptions import AppError
 from app.core.logging import setup_logging
 from app.api.v1.router import router as v1_router
+from app.api.v1.location import router as location_router
 from app.db.redis import init_redis, close_redis, _redis_pool
 
 settings = get_settings()
@@ -20,9 +22,20 @@ async def lifespan(app: FastAPI):
     setup_logging()
     logger.info("wander_api_starting", environment=settings.ENVIRONMENT)
     await init_redis()
+    # Start Redis pubsub listener for location broadcasts
+    asyncio.create_task(_start_location_pubsub_task())
     yield
     await close_redis()
     logger.info("wander_api_shutdown")
+
+
+async def _start_location_pubsub_task():
+    """Wrapper to start the Redis pubsub listener without blocking."""
+    try:
+        from app.api.v1.location import start_location_pubsub
+        await start_location_pubsub()
+    except Exception as e:
+        logger.error("location_pubsub_start_failed", error=str(e))
 
 
 app = FastAPI(

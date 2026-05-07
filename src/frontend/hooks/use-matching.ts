@@ -41,21 +41,22 @@ export function useMatching(activityId: string) {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<MatchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [matchStats, setMatchStats] = useState<{ geo_method?: string; search_radius_km?: number }>({});
 
   const start = useCallback(async () => {
     setError(null);
     setResult(null);
     setPhase("filtering");
-    await animateProgress(setProgress, 0, 25, 600);
+    await animateProgress(setProgress, 0, 15, 600);
 
     setPhase("constraints");
     try {
-      await apiFetch(`/match/${activityId}`, { method: "POST" });
+      const startResp = await apiFetch<{ total_users: number }>(`/match/${activityId}`, { method: "POST" });
     } catch (e) {
       setError("Matching failed to start");
       return;
     }
-    await animateProgress(setProgress, 25, 50, 400);
+    await animateProgress(setProgress, 15, 40, 600);
 
     setPhase("solving");
     let polled = 0;
@@ -64,14 +65,20 @@ export function useMatching(activityId: string) {
       await new Promise((r) => setTimeout(r, 800));
       polled++;
       try {
-        const status = await apiFetch<{ status: string; progress: number }>(
+        const status = await apiFetch<{ status: string; progress: number; phase?: string; total_users?: number; geo_method?: string; search_radius_km?: number }>(
           `/match/${activityId}/status`
         );
-        const clientProgress = 50 + (status.progress || 0) * 0.45 / 100;
+        const clientProgress = 40 + (status.progress || 0) * 0.55 / 100;
         setProgress(Math.min(clientProgress, 95));
+        
+        // Update stats if provided
+        if (status.geo_method || status.search_radius_km) {
+          setMatchStats({ geo_method: status.geo_method, search_radius_km: status.search_radius_km });
+        }
+        
         if (status.status === "complete") break;
         if (status.status === "failed") {
-          setError("Matching solver failed");
+          setError("Matching solver failed. Try increasing your search radius.");
           return;
         }
       } catch (e) {
@@ -89,7 +96,7 @@ export function useMatching(activityId: string) {
     }
   }, [activityId]);
 
-  return { phase, progress, result, error, start };
+  return { phase, progress, result, error, start, matchStats };
 }
 
 async function animateProgress(

@@ -25,6 +25,7 @@ class ActivityResponse(BaseModel):
     phone_free_encouraged: bool = True
     status: str = "open"
     participant_count: int = 0
+    distance_km: float | None = None
     created_at: datetime | None = None
 
     class Config:

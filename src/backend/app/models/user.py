@@ -41,6 +41,12 @@ class User(Base):
     city: Mapped[str] = mapped_column(String(50), default="Bangalore")
     travel_radius_km: Mapped[int] = mapped_column(Integer, default=15)
 
+    # Live geo-tracking for real-time matchmaking
+    live_lat: Mapped[float | None] = mapped_column(Float(10))
+    live_lng: Mapped[float | None] = mapped_column(Float(10))
+    last_active_at: Mapped[datetime | None] = mapped_column(DateTime)
+    preferred_radius_km: Mapped[int] = mapped_column(Integer, default=20)
+
     emergency_contact_name: Mapped[str | None] = mapped_column(String(100))
     emergency_contact_phone: Mapped[str | None] = mapped_column(String(15))
     women_only_preference: Mapped[bool] = mapped_column(Boolean, default=False)

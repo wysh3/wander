@@ -23,6 +23,10 @@ class UserResponse(BaseModel):
     home_area: str | None = None
     city: str = "Bangalore"
     travel_radius_km: int = 15
+    live_lat: float | None = None
+    live_lng: float | None = None
+    last_active_at: datetime | None = None
+    preferred_radius_km: int = 20
     emergency_contact_name: str | None = None
     emergency_contact_phone: str | None = None
     women_only_preference: bool = False
@@ -74,6 +78,9 @@ class UpdateProfileRequest(BaseModel):
     home_lng: float | None = None
     home_area: str | None = None
     travel_radius_km: int | None = None
+    live_lat: float | None = None
+    live_lng: float | None = None
+    preferred_radius_km: int | None = None
     emergency_contact_name: str | None = None
     emergency_contact_phone: str | None = None
     women_only_preference: bool | None = None

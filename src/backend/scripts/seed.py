@@ -12,13 +12,14 @@ async def seed():
     async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with async_session() as session:
-        # Create 5 Wander Hosts
+        # ── Hosts (5) ──────────────────────────────────────────────────────
         host_users = [
             User(supabase_uid=f"host_{i}", phone=f"+91999900000{i}", name=name,
                  gender=gender, verification_status="verified",
                  onboarding_completed=True,
                  personality_vector=pv,
-                 home_lat=hlat, home_lng=hlng, home_area=area, travel_radius_km=15)
+                 home_lat=hlat, home_lng=hlng, home_area=area, travel_radius_km=15,
+                 live_lat=hlat, live_lng=hlng, last_active_at=datetime.utcnow(), preferred_radius_km=20)
             for i, (name, gender, pv, hlat, hlng, area) in enumerate([
                 ("Arjun Kumar", "male", [0.80, 0.70, 0.90, 0.75, 0.95], 13.3702, 77.6835, "Nandi Hills"),
                 ("Meera Nair", "female", [0.60, 0.50, 0.85, 0.90, 0.80], 12.9716, 77.6411, "Indiranagar"),
@@ -40,20 +41,23 @@ async def seed():
             session.add(Host(user_id=user.id, specialties=specialties, rating_avg=rating,
                              background_verified=True, interview_completed=True, active=True))
 
-        # Create 20 demo users with personality vectors
+        # ── Demo Users (20) ────────────────────────────────────────────────
         demo_users = [
             User(supabase_uid=f"demo_{i}", phone=f"+9198880000{i:02d}", name=name,
                  gender=gender, verification_status="verified",
                  onboarding_completed=True,
                  personality_vector=pv, interests=interests,
                  home_lat=hlat, home_lng=hlng, home_area=area,
-                 travel_radius_km=15,
+                 travel_radius_km=15, preferred_radius_km=20,
+                 live_lat=hlat, live_lng=hlng, last_active_at=datetime.utcnow(),
                  emergency_contact_name=ec_name, emergency_contact_phone=ec_phone)
             for i, (name, gender, pv, interests, hlat, hlng, area, ec_name, ec_phone) in enumerate([
+                # ── Users near Devanahalli (for hyperlocal matching demo) ──
                 ("Priya Sharma", "female", [0.72, 0.65, 0.70, 0.82, 0.78],
-                 ["trekking", "photography", "pottery"], 12.9716, 77.5946, "Cubbon Park", "Rahul Verma", "+919876500001"),
+                 ["trekking", "photography", "pottery"], 13.2460, 77.7110, "Devanahalli", "Rahul Verma", "+919876500001"),
                 ("Rahul Verma", "male", [0.70, 0.60, 0.65, 0.80, 0.75],
-                 ["trekking", "cycling"], 12.9716, 77.6411, "Indiranagar", "Priya Sharma", "+919876500002"),
+                 ["trekking", "cycling"], 13.2500, 77.7150, "Devanahalli", "Priya Sharma", "+919876500002"),
+                # ── Users in central Bangalore (Indiranagar, Koramangala) ──
                 ("Ananya Patel", "female", [0.75, 0.70, 0.80, 0.85, 0.70],
                  ["board_games", "painting"], 12.9344, 77.6100, "Koramangala", None, None),
                 ("Karan Joshi", "male", [0.80, 0.75, 0.60, 0.65, 0.80],
@@ -95,8 +99,10 @@ async def seed():
         session.add_all(demo_users)
         await session.flush()
 
-        # Create venues
+        # ── Venues ──────────────────────────────────────────────────────────
         venues = [
+            Venue(name="Devanahalli Fort", area="Devanahalli", lat=13.2460, lng=77.7110,
+                  venue_type="historical", city="Bangalore", wander_verified=True),
             Venue(name="Nandi Hills Trailhead", area="Nandi Hills", lat=13.3702, lng=77.6835,
                   venue_type="outdoor", city="Bangalore", wander_verified=True),
             Venue(name="Cubbon Park Bandstand", area="Cubbon Park", lat=12.9716, lng=77.5946,
@@ -105,109 +111,255 @@ async def seed():
                   venue_type="creative_space", city="Bangalore", wander_verified=True),
             Venue(name="Rangoli Metro Art Center", area="MG Road", lat=12.9716, lng=77.6071,
                   venue_type="art_center", city="Bangalore", wander_verified=True),
+            Venue(name="Yelahanka Lake", area="Yelahanka", lat=13.1000, lng=77.5960,
+                  venue_type="lake", city="Bangalore", wander_verified=True),
+            Venue(name="Hebbal Lake", area="Hebbal", lat=13.0358, lng=77.5970,
+                  venue_type="lake", city="Bangalore", wander_verified=True),
+            Venue(name="JP Nagar Park", area="JP Nagar", lat=12.9063, lng=77.5857,
+                  venue_type="park", city="Bangalore", wander_verified=True),
+            Venue(name="Whitefield Community Hall", area="Whitefield", lat=12.9698, lng=77.7500,
+                  venue_type="indoor", city="Bangalore", wander_verified=True),
+            Venue(name="Electronic City Phase 1", area="Electronic City", lat=12.8456, lng=77.6603,
+                  venue_type="outdoor", city="Bangalore", wander_verified=True),
         ]
         session.add_all(venues)
         await session.flush()
 
-        # Create 15 activities across 7 categories
+        # ── Activities — 30+ across all distance bands from Devanahalli ─────
+        # Reference point: Devanahalli (13.2453, 77.7104)
+        # Walking (< 2km), Nearby (2-10), Within Radius (10-20), Reachable (20-30), Far (30+)
+
         activities = [
-            Activity(title="Nandi Hills Sunrise Trek", description="Hike to the top for a magical sunrise.",
-                     category="physical", area="Nandi Hills", lat=13.3702, lng=77.6835,
-                     scheduled_at=datetime.utcnow() + timedelta(days=3), venue_id=venues[0].id,
+            # ═══════════════════════════════════════════════════════════════
+            # BAND 1: WALKING DISTANCE (< 2km from Devanahalli)
+            # ═══════════════════════════════════════════════════════════════
+            Activity(title="Devanahalli Fort Heritage Walk",
+                     description="Explore the historic fort where Tipu Sultan was born. 30-min guided walk.",
+                     category="explore", area="Devanahalli",
+                     lat=13.2460, lng=77.7110, venue_id=venues[0].id,
+                     scheduled_at=datetime.utcnow() + timedelta(days=1, hours=7),
+                     group_size_min=4, group_size_max=8, max_groups=2,
+                     host_ids=[host_users[0].id], status="open"),
+            Activity(title="Morning Chai at Devanahalli Local",
+                     description="Filter coffee and fresh vada at the famous local tapri. Hyperlocal vibes.",
+                     category="slow", area="Devanahalli",
+                     lat=13.2475, lng=77.7120,
+                     scheduled_at=datetime.utcnow() + timedelta(days=2, hours=6),
+                     group_size_min=3, group_size_max=6, max_groups=1,
+                     host_ids=[host_users[1].id], status="open"),
+            Activity(title="Devanahalli Ranganatha Temple Visit",
+                     description="Peaceful temple visit with history walk around the village.",
+                     category="slow", area="Devanahalli",
+                     lat=13.2440, lng=77.7090,
+                     scheduled_at=datetime.utcnow() + timedelta(days=3, hours=8),
+                     group_size_min=3, group_size_max=8, max_groups=2,
+                     host_ids=[host_users[0].id], status="open"),
+            Activity(title="Sunrise Walk — Devanahalli Farms",
+                     description="Walk through organic farms on the outskirts of Devanahalli. Fresh air, fresh produce.",
+                     category="physical", area="Devanahalli",
+                     lat=13.2510, lng=77.7200,
+                     scheduled_at=datetime.utcnow() + timedelta(days=4, hours=5, minutes=30),
+                     group_size_min=4, group_size_max=10, max_groups=2,
+                     host_ids=[host_users[2].id], phone_free_encouraged=True, status="open"),
+
+            # ═══════════════════════════════════════════════════════════════
+            # BAND 2: NEARBY (2–10 km from Devanahalli)
+            # ═══════════════════════════════════════════════════════════════
+            Activity(title="Nandi Hills Sunrise Trek",
+                     description="Hike to the top for a magical sunrise. 3 km trek, moderate difficulty.",
+                     category="physical", area="Nandi Hills",
+                     lat=13.3702, lng=77.6835, venue_id=venues[1].id,
+                     scheduled_at=datetime.utcnow() + timedelta(days=3),
                      group_size_min=4, group_size_max=8, max_groups=2,
                      host_ids=[host_users[0].id], phone_free_encouraged=True, status="open",
                      tags=["trekking", "outdoors", "sunrise", "nature", "hiking"]),
-            Activity(title="Pottery + Chai at Lahe Lahe", description="Get your hands dirty with clay.",
-                     category="skill", area="Indiranagar", lat=12.9716, lng=77.6411,
-                     scheduled_at=datetime.utcnow() + timedelta(days=2), venue_id=venues[2].id,
+            Activity(title="Birdwatching at Yelahanka Lake",
+                     description="Spot migratory birds with binoculars and an expert naturalist.",
+                     category="explore", area="Yelahanka",
+                     lat=13.1000, lng=77.5960, venue_id=venues[5].id,
+                     scheduled_at=datetime.utcnow() + timedelta(days=5, hours=6),
+                     group_size_min=3, group_size_max=6, max_groups=1,
+                     host_ids=[host_users[1].id], status="open",
+                     tags=["birdwatching", "nature", "outdoors", "lake", "exploring"]),
+            Activity(title="Cycling to Nandi Hills Base",
+                     description="20 km cycle from Devanahalli to Nandi Hills base. Moderate pace, scenic route.",
+                     category="physical", area="Nandi Hills",
+                     lat=13.3200, lng=77.6900,
+                     scheduled_at=datetime.utcnow() + timedelta(days=6, hours=5),
+                     group_size_min=4, group_size_max=8, max_groups=2,
+                     host_ids=[host_users[2].id], status="open",
+                     tags=["cycling", "fitness", "outdoors", "scenic", "sports"]),
+            Activity(title="Ranganatha Temple Yelahanka Visit",
+                     description="500-year-old temple architecture + guided spiritual walk.",
+                     category="mental", area="Yelahanka",
+                     lat=13.1000, lng=77.5960,
+                     scheduled_at=datetime.utcnow() + timedelta(days=7, hours=9),
+                     group_size_min=3, group_size_max=6, max_groups=1,
+                     host_ids=[host_users[3].id], status="open",
+                     tags=["temple", "heritage", "spiritual", "walking", "architecture"]),
+
+            # ═══════════════════════════════════════════════════════════════
+            # BAND 3: WITHIN YOUR RADIUS (10–20 km from Devanahalli)
+            # ═══════════════════════════════════════════════════════════════
+            Activity(title="Hebbal Lake Cleanup & Walk",
+                     description="Community lake cleanup followed by a 2 km walking meditation.",
+                     category="social_good", area="Hebbal",
+                     lat=13.0358, lng=77.5970, venue_id=venues[6].id,
+                     scheduled_at=datetime.utcnow() + timedelta(days=2, hours=7),
+                     group_size_min=6, group_size_max=12, max_groups=3,
+                     host_ids=[host_users[0].id], status="open",
+                     tags=["volunteering", "environment", "lake", "walking", "social_good"]),
+            Activity(title="Pottery Workshop — Yelahanka",
+                     description="Learn wheel pottery from a local artisan. Take your creation home!",
+                     category="skill", area="Yelahanka",
+                     lat=13.0226, lng=77.5880,
+                     scheduled_at=datetime.utcnow() + timedelta(days=4, hours=10),
+                     group_size_min=4, group_size_max=6, max_groups=2,
+                     host_ids=[host_users[1].id], status="open",
+                     tags=["pottery", "creativity", "art", "hands-on", "learning"]),
+            Activity(title="Sunday Morning Yoga — Hebbal",
+                     description="Vinyasa flow by the lake. All levels welcome.",
+                     category="slow", area="Hebbal",
+                     lat=13.0358, lng=77.5970,
+                     scheduled_at=datetime.utcnow() + timedelta(days=1, hours=6),
+                     group_size_min=4, group_size_max=10, max_groups=2,
+                     host_ids=[host_users[3].id], status="open",
+                     tags=["yoga", "meditation", "wellness", "morning", "outdoors"]),
+
+            # ═══════════════════════════════════════════════════════════════
+            # BAND 4: REACHABLE (20–30 km from Devanahalli)
+            # ═══════════════════════════════════════════════════════════════
+            Activity(title="Pottery + Chai at Lahe Lahe",
+                     description="Get your hands dirty with clay. Throwing, trimming, glazing.",
+                     category="skill", area="Indiranagar",
+                     lat=12.9716, lng=77.6411, venue_id=venues[3].id,
+                     scheduled_at=datetime.utcnow() + timedelta(days=2),
                      group_size_min=4, group_size_max=6, max_groups=2,
                      host_ids=[host_users[1].id], status="open",
                      tags=["pottery", "creativity", "art", "chai", "hands-on"]),
-            Activity(title="Cubbon Park Cleanup Drive", description="Clean the park, meet good people.",
-                     category="social_good", area="Cubbon Park", lat=12.9716, lng=77.5946,
-                     scheduled_at=datetime.utcnow() + timedelta(days=4), venue_id=venues[1].id,
+            Activity(title="Cubbon Park Cleanup Drive",
+                     description="Clean the park, meet good people. Gloves and bags provided.",
+                     category="social_good", area="Cubbon Park",
+                     lat=12.9716, lng=77.5946, venue_id=venues[2].id,
+                     scheduled_at=datetime.utcnow() + timedelta(days=4),
                      group_size_min=6, group_size_max=12, max_groups=3,
                      host_ids=[host_users[2].id], status="open",
                      tags=["volunteering", "outdoors", "environment", "social_good", "park"]),
-            Activity(title="Board Game Night", description="Settlers of Catan, Coup, and chai.",
+            Activity(title="Board Game Night — Indiranagar",
+                     description="Settlers of Catan, Coup, Secret Hitler. Chai and cookies provided.",
                      category="mental", area="Indiranagar",
-                     scheduled_at=datetime.utcnow() + timedelta(days=5),
+                     lat=12.9716, lng=77.6411,
+                     scheduled_at=datetime.utcnow() + timedelta(days=5, hours=18),
                      group_size_min=4, group_size_max=6, max_groups=2,
                      host_ids=[host_users[4].id], status="open",
                      tags=["board_games", "strategy", "social", "indoor", "gaming"]),
-            Activity(title="Sunday Morning Yoga", description="Hatha yoga under a banyan tree.",
-                     category="slow", area="Cubbon Park", lat=12.9716, lng=77.5946,
-                     scheduled_at=datetime.utcnow() + timedelta(days=1), venue_id=venues[1].id,
-                     group_size_min=4, group_size_max=8, max_groups=2,
-                     host_ids=[host_users[3].id], status="open",
-                     tags=["yoga", "meditation", "wellness", "morning", "outdoors"]),
-            Activity(title="Koramangala Food Walk", description="4 street food stops, 1 happy group.",
+            Activity(title="Koramangala Food Walk",
+                     description="4 street food stops, 1 happy group. From dosa to dessert.",
                      category="explore", area="Koramangala",
-                     scheduled_at=datetime.utcnow() + timedelta(days=6),
+                     lat=12.9344, lng=77.6100,
+                     scheduled_at=datetime.utcnow() + timedelta(days=6, hours=17),
                      group_size_min=4, group_size_max=8, max_groups=2,
                      host_ids=[host_users[0].id], status="open",
                      tags=["food", "exploring", "street_food", "walking", "social"]),
-            Activity(title="Midnight Chaos Bowling", description="Bowling at 11 PM. No rules, just fun.",
+            Activity(title="Midnight Chaos Bowling — MG Road",
+                     description="Bowling at 11 PM. No rules, just fun and gutter balls.",
                      category="chaotic", area="MG Road",
-                     scheduled_at=datetime.utcnow() + timedelta(days=7),
+                     lat=12.9716, lng=77.6071,
+                     scheduled_at=datetime.utcnow() + timedelta(days=7, hours=23),
                      group_size_min=4, group_size_max=6, max_groups=2,
                      host_ids=[host_users[2].id], status="open",
                      tags=["bowling", "night", "social", "indoor", "fun"]),
-            Activity(title="Slow Reading Club", description="Bring a book. Read. Discuss over filter coffee.",
+            Activity(title="Slow Reading Club — JP Nagar",
+                     description="Bring a book. Read in silence for 45 min. Discuss over filter coffee.",
                      category="slow", area="JP Nagar",
-                     scheduled_at=datetime.utcnow() + timedelta(days=3),
+                     lat=12.9063, lng=77.5857,
+                     scheduled_at=datetime.utcnow() + timedelta(days=3, hours=16),
                      group_size_min=4, group_size_max=6, max_groups=1,
                      host_ids=[host_users[1].id], status="open",
                      tags=["reading", "books", "discussion", "coffee", "slow", "learning"]),
-            Activity(title="Lalbagh Heritage Walk", description="Botanical garden tour with historian.",
+            Activity(title="Lalbagh Heritage Walk",
+                     description="Botanical garden tour with a historian. 200-year-old trees + rare species.",
                      category="explore", area="JP Nagar",
-                     scheduled_at=datetime.utcnow() + timedelta(days=4),
+                     lat=12.9063, lng=77.5857,
+                     scheduled_at=datetime.utcnow() + timedelta(days=4, hours=7),
                      group_size_min=6, group_size_max=10, max_groups=2,
                      host_ids=[host_users[0].id], status="open",
                      tags=["heritage", "walking", "history", "outdoors", "exploring"]),
-            Activity(title="Evening Cycling — Outer Ring", description="15km ride, moderate pace.",
-                     category="physical", area="Whitefield",
-                     scheduled_at=datetime.utcnow() + timedelta(days=2),
-                     group_size_min=4, group_size_max=8, max_groups=2,
-                     host_ids=[host_users[2].id], status="open",
-                     tags=["cycling", "fitness", "outdoors", "evening", "sports"]),
-            Activity(title="Wall Art + Mural Painting", description="Beautify a community wall together.",
-                     category="social_good", area="HSR Layout",
-                     scheduled_at=datetime.utcnow() + timedelta(days=5),
-                     group_size_min=4, group_size_max=8, max_groups=2,
-                     host_ids=[host_users[1].id], status="open",
-                     tags=["painting", "creativity", "art", "outdoors", "community"]),
-            Activity(title="Photography Walk — Chickpet", description="Street photography in Old Bangalore.",
+            Activity(title="Photography Walk — Chickpet",
+                     description="Street photography in Old Bangalore. Vintage markets, narrow lanes.",
                      category="skill", area="MG Road",
-                     scheduled_at=datetime.utcnow() + timedelta(days=6),
+                     lat=12.9716, lng=77.6071,
+                     scheduled_at=datetime.utcnow() + timedelta(days=6, hours=7),
                      group_size_min=4, group_size_max=6, max_groups=1,
                      host_ids=[host_users[0].id], status="open",
                      tags=["photography", "walking", "street_photography", "creativity", "exploring"]),
-            Activity(title="Dumbbell + Brunch", description="30 min HIIT. Then unlimited dosas.",
-                     category="physical", area="HSR Layout",
-                     scheduled_at=datetime.utcnow() + timedelta(days=7),
-                     group_size_min=4, group_size_max=8, max_groups=2,
-                     host_ids=[host_users[2].id], status="open",
-                     tags=["fitness", "workout", "food", "brunch", "strength"]),
-            Activity(title="Mindfulness + Meditation", description="Guided meditation and journaling.",
-                     category="mental", area="Yelahanka",
-                     scheduled_at=datetime.utcnow() + timedelta(days=3),
-                     group_size_min=4, group_size_max=6, max_groups=2,
-                     host_ids=[host_users[3].id], status="open",
-                     tags=["meditation", "mindfulness", "journaling", "wellness", "mental_health"]),
-            Activity(title="Saree + Filter Coffee Walk", description="Wear a saree, walk, drink coffee.",
+            Activity(title="Saree + Filter Coffee Walk",
+                     description="Wear a saree, walk through Indiranagar, drink filter coffee. Women only 🌸",
                      category="chaotic", area="Indiranagar",
-                     scheduled_at=datetime.utcnow() + timedelta(days=8),
+                     lat=12.9716, lng=77.6411,
+                     scheduled_at=datetime.utcnow() + timedelta(days=8, hours=16),
                      group_size_min=6, group_size_max=10, max_groups=2, women_only=True,
                      host_ids=[host_users[1].id], status="open",
                      tags=["walking", "social", "coffee", "fashion", "culture"]),
+
+            # ═══════════════════════════════════════════════════════════════
+            # BAND 5: FARTHER AWAY (30+ km from Devanahalli)
+            # ═══════════════════════════════════════════════════════════════
+            Activity(title="Evening Cycling — Outer Ring Road",
+                     description="18 km ride along the ORR service road. Moderate pace, sunset views.",
+                     category="physical", area="Whitefield",
+                     lat=12.9698, lng=77.7500,
+                     scheduled_at=datetime.utcnow() + timedelta(days=2, hours=16),
+                     group_size_min=4, group_size_max=8, max_groups=2,
+                     host_ids=[host_users[2].id], status="open",
+                     tags=["cycling", "fitness", "outdoors", "evening", "sports"]),
+            Activity(title="Dumbbell + Brunch — HSR Layout",
+                     description="30 min HIIT. Then unlimited dosas. Fitness + feast.",
+                     category="physical", area="HSR Layout",
+                     lat=12.9121, lng=77.6446,
+                     scheduled_at=datetime.utcnow() + timedelta(days=7, hours=8),
+                     group_size_min=4, group_size_max=8, max_groups=2,
+                     host_ids=[host_users[2].id], status="open",
+                     tags=["fitness", "workout", "food", "brunch", "strength"]),
+            Activity(title="Mindfulness + Meditation — HSR Layout",
+                     description="Guided meditation, breathwork, and journaling. Quiet your mind.",
+                     category="mental", area="HSR Layout",
+                     lat=12.9121, lng=77.6446,
+                     scheduled_at=datetime.utcnow() + timedelta(days=3, hours=7),
+                     group_size_min=4, group_size_max=6, max_groups=2,
+                     host_ids=[host_users[3].id], status="open",
+                     tags=["meditation", "mindfulness", "journaling", "wellness", "mental_health"]),
+            Activity(title="Wall Art + Mural Painting — HSR",
+                     description="Beautify a community wall together. All art supplies provided.",
+                     category="social_good", area="HSR Layout",
+                     lat=12.9121, lng=77.6446,
+                     scheduled_at=datetime.utcnow() + timedelta(days=5, hours=9),
+                     group_size_min=4, group_size_max=8, max_groups=2,
+                     host_ids=[host_users[1].id], status="open",
+                     tags=["painting", "creativity", "art", "outdoors", "community"]),
+            Activity(title="Tech Meetup — Electronic City",
+                     description="Casual tech talk + networking. AI, startups, and snacks.",
+                     category="skill", area="Electronic City",
+                     lat=12.8456, lng=77.6603, venue_id=venues[9].id,
+                     scheduled_at=datetime.utcnow() + timedelta(days=8, hours=18),
+                     group_size_min=4, group_size_max=8, max_groups=2,
+                     host_ids=[host_users[4].id], status="open",
+                     tags=["tech", "networking", "learning", "social", "indoor"]),
+            Activity(title="Electronic City Lake Walk",
+                     description="Evening walk around the lake with fellow wanderers. Binoculars provided.",
+                     category="slow", area="Electronic City",
+                     lat=12.8456, lng=77.6603,
+                     scheduled_at=datetime.utcnow() + timedelta(days=9, hours=17),
+                     group_size_min=4, group_size_max=8, max_groups=2,
+                     host_ids=[host_users[0].id], status="open",
+                     tags=["walking", "lake", "outdoors", "evening", "social"]),
         ]
         session.add_all(activities)
         await session.flush()
 
-        # Create 3 past completed groups for Wander Report data
+        # ── Past completed groups for Wander Report ──────────────────────────
         past_activities = [
-            Activity(title="Trek to Savandurga", description="Asia's largest monolith.",
+            Activity(title="Trek to Savandurga", description="Asia's largest monolith trek.",
                      category="physical", area="Savandurga", city="Bangalore",
                      scheduled_at=datetime.utcnow() - timedelta(days=30), status="completed"),
             Activity(title="Board Games Meetup", description="Strategy games evening.",
@@ -230,7 +382,7 @@ async def seed():
             for demo_user in demo_users[:4]:
                 session.add(GroupMember(group_id=group.id, user_id=demo_user.id, checked_in=True, rating=5))
 
-        # Set report stats for Priya
+        # Set report stats for Priya (first demo user)
         priya = demo_users[0]
 
         # Create 5 interest-based communities
@@ -294,6 +446,9 @@ async def seed():
 
         await session.commit()
         print("Seed data created successfully!")
+        print("  - 5 hosts, 20 demo users")
+        print("  - 10 venues")
+        print(f"  - {len(activities)} activities across 5 distance bands (Walking to Far)")
 
 
 if __name__ == "__main__":

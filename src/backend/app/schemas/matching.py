@@ -13,6 +13,7 @@ class MatchStatusResponse(BaseModel):
     status: str
     progress: int = 0
     total_users: int = 0
+    phase: str | None = None
 
 
 class GroupResult(BaseModel):
