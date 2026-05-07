@@ -1,6 +1,7 @@
 "use client";
 
-import "@/app/globals.css";
+// @ts-ignore
+import "./globals.css";
 
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
