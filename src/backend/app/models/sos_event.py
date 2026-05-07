@@ -19,4 +19,8 @@ class SOSEvent(Base):
     emergency_contact_notified: Mapped[bool] = mapped_column(Boolean, default=False)
     nearest_police_station: Mapped[str | None] = mapped_column(String(200))
     resolved: Mapped[bool] = mapped_column(Boolean, default=False)
+    resolution_status: Mapped[str] = mapped_column(String(20), default="open")
+    admin_notes: Mapped[str | None] = mapped_column(String, nullable=True)
+    resolved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     triggered_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

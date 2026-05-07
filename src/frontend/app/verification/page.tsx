@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
 import { ShieldCheck, ChevronRight, Lock, Shield, CheckCircle2, Users, FileText, Fingerprint } from "lucide-react";
@@ -10,7 +10,22 @@ export default function VerificationPage() {
   const [loading, setLoading] = useState(false);
   const [verified, setVerified] = useState(false);
   const router = useRouter();
-  const { setUser, user } = useAuthStore();
+  const { setUser, user, isAuthenticated } = useAuthStore();
+
+  // Auto-redirect if already verified
+  useEffect(() => {
+    if (user?.verification_status === "verified") {
+      setVerified(true);
+      setTimeout(() => router.push("/onboarding"), 800);
+    }
+  }, [user, router]);
+
+  // Redirect to signup if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/signup");
+    }
+  }, [isAuthenticated, router]);
 
   const verifyDigilocker = async () => {
     setLoading(true);

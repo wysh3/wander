@@ -43,7 +43,12 @@ export default function SignupPage() {
         body: JSON.stringify({ phone: `+91${phone}`, otp }),
       });
       setAuth(data.access_token, data.user);
-      router.push("/verification");
+      // Admin users skip verification/onboarding and go straight to admin panel
+      if (data.user?.role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/verification");
+      }
     } catch (e: any) {
       setError(e.message);
     }

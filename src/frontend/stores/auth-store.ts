@@ -7,6 +7,7 @@ interface UserProfile {
   name: string | null;
   verification_status: string;
   onboarding_completed: boolean;
+  role: string;
 }
 
 interface AuthState {

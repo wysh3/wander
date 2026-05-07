@@ -17,6 +17,7 @@ async def seed():
             User(supabase_uid=f"host_{i}", phone=f"+91999900000{i}", name=name,
                  gender=gender, verification_status="verified",
                  onboarding_completed=True,
+                 role="admin" if i == 0 else "host",
                  personality_vector=pv,
                  home_lat=hlat, home_lng=hlng, home_area=area, travel_radius_km=15,
                  live_lat=hlat, live_lng=hlng, last_active_at=datetime.utcnow(), preferred_radius_km=20)

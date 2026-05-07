@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 import structlog
 import time
 import asyncio
@@ -116,3 +117,9 @@ async def health_check():
 
 
 app.include_router(v1_router, prefix="/api/v1")
+
+# Mount static files for image uploads
+import os
+static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
+os.makedirs(os.path.join(static_dir, "uploads"), exist_ok=True)
+app.mount("/static", StaticFiles(directory=static_dir), name="static")

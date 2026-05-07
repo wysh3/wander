@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Users, BarChart3, ShieldAlert, Globe, HeartHandshake, Sparkles, User, ChevronRight } from "lucide-react";
+import { Compass, Users, BarChart3, ShieldAlert, Globe, HeartHandshake, Sparkles, User, ChevronRight, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth-store";
 
 const navItems = [
   { href: "/activities", label: "Discover", icon: Compass },
@@ -18,6 +19,8 @@ const navItems = [
 
 export function DesktopSidebar() {
   const pathname = usePathname();
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === "admin";
 
   return (
     <aside className="hidden md:flex md:w-[256px] md:flex-col md:border-r border-gray-100 md:bg-white md:h-screen fixed left-0 top-0 bottom-0 z-40 overflow-y-auto">
@@ -53,6 +56,20 @@ export function DesktopSidebar() {
             </Link>
           );
         })}
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className={cn(
+              "flex items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all",
+              pathname.startsWith("/admin")
+                ? "bg-red-50 text-red-600 border border-red-100"
+                : "text-[#1e3a5f]/60 hover:bg-red-50/50 hover:text-red-500"
+            )}
+          >
+            <ShieldCheck className={cn("h-5 w-5", pathname.startsWith("/admin") ? "text-red-500" : "text-[#1e3a5f]/30")} />
+            Admin Panel
+          </Link>
+        )}
       </nav>
 
       <div className="mt-auto px-4 pb-6 space-y-4">

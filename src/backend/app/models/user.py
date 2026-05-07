@@ -32,6 +32,7 @@ class User(Base):
     vibe: Mapped[str | None] = mapped_column(String(50))
     availability: Mapped[list[str] | None] = mapped_column(ARRAY(Text), default=[])
 
+    role: Mapped[str] = mapped_column(String(20), default="user")
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     onboarding_chat_log: Mapped[dict | None] = mapped_column(JSONB)
 

@@ -7,13 +7,18 @@ import { useAuthStore } from "@/stores/auth-store";
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/signup");
-  }, [isAuthenticated, router]);
+    if (!isAuthenticated) {
+      router.push("/signup");
+    } else if (user?.onboarding_completed) {
+      router.replace("/activities");
+    }
+  }, [isAuthenticated, user, router]);
 
   if (!isAuthenticated) return null;
+  if (user?.onboarding_completed) return null;
 
   return (
     <div 

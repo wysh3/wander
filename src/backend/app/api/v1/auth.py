@@ -94,6 +94,7 @@ async def verify_otp_endpoint(
             "name": user.name,
             "verification_status": user.verification_status,
             "onboarding_completed": user.onboarding_completed,
+            "role": user.role,
         },
     )
 
@@ -142,5 +143,6 @@ async def refresh_token(
             "name": user.name,
             "verification_status": user.verification_status,
             "onboarding_completed": user.onboarding_completed,
+            "role": user.role,
         },
     )

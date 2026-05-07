@@ -69,5 +69,10 @@
     min-height: 44px;
     min-width: 44px;
   }
+
+  /* Admin Input */
+  .input-admin {
+    @apply w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-wander-teal focus:ring-1 focus:ring-wander-teal/20 transition-colors;
+  }
 }
 
