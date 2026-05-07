@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CategoryFilter } from "@/components/activities/category-filter";
 import { ActivityFeed } from "@/components/activities/activity-feed";
-import { Bell, ChevronDown } from "lucide-react";
+import { Bell, ChevronDown, User } from "lucide-react";
 
 export default function ActivitiesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -24,11 +24,11 @@ export default function ActivitiesPage() {
           </button>
           
           <div className="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-shadow">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-green-400 to-blue-500 overflow-hidden shadow-sm">
-              <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" alt="User" className="w-full h-full object-cover" />
+            <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-[#1e3a5f]/40">
+              <User className="h-4 w-4" />
             </div>
             <div className="flex flex-col -gap-1">
-              <span className="text-xs font-bold text-[#1e3a5f]">Alex Morgan</span>
+              <span className="text-xs font-bold text-[#1e3a5f]">User</span>
               <span className="text-[10px] text-[#1e3a5f]/50">Pro Member</span>
             </div>
             <ChevronDown className="w-4 h-4 text-[#1e3a5f]/40" />

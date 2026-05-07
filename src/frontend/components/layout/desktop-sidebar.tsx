@@ -57,11 +57,11 @@ export function DesktopSidebar() {
         {/* User Profile */}
         <div className="flex items-center justify-between p-2 rounded-2xl hover:bg-gray-50 cursor-pointer transition-colors border border-transparent hover:border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 overflow-hidden shadow-sm">
-              <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" alt="User" className="w-full h-full object-cover" />
+            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-[#1e3a5f]/40">
+              <User className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-bold text-[#1e3a5f]">Aarav</p>
+              <p className="text-sm font-bold text-[#1e3a5f]">User</p>
               <p className="text-xs text-[#1e3a5f]/60 font-medium">View profile</p>
             </div>
           </div>
