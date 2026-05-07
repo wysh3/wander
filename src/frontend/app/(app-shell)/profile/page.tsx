@@ -206,6 +206,50 @@ export default function ProfilePage() {
         </div>
       </motion.div>
 
+      {/* Feedback / Past Experiences Section */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.55 }}
+        className="bg-white rounded-[32px] p-7 border border-gray-100 shadow-sm"
+      >
+        <h3 className="font-bold text-[18px] text-[#1e3a5f] mb-5">Past Experiences & Feedback</h3>
+        <div className="space-y-4">
+          {[
+            { 
+              name: "Ananya", 
+              event: "Riverside Pottery", 
+              comment: "Great vibe! Really helpful and kept the energy high.", 
+              rating: 5,
+              date: "2 days ago"
+            },
+            { 
+              name: "Priya", 
+              event: "Cubbon Park Walk", 
+              comment: "Super friendly. Had a great time exploring the hidden spots!", 
+              rating: 4,
+              date: "1 week ago"
+            }
+          ].map((feedback, i) => (
+            <div key={i} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 relative overflow-hidden">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <p className="font-bold text-[#1e3a5f] text-sm">{feedback.name}</p>
+                  <p className="text-[11px] font-medium text-[#2cb1bc]">{feedback.event}</p>
+                </div>
+                <div className="flex gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Heart key={i} className={`w-3 h-3 ${i < feedback.rating ? 'text-rose-500 fill-rose-500' : 'text-gray-300'}`} />
+                  ))}
+                </div>
+              </div>
+              <p className="text-[13px] text-[#1e3a5f]/70 leading-relaxed italic">"{feedback.comment}"</p>
+              <p className="text-[10px] text-[#1e3a5f]/40 mt-2 font-medium">{feedback.date}</p>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
       {/* Settings List */}
       <motion.div
         initial={{ opacity: 0 }}

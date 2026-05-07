@@ -36,39 +36,78 @@ export function DesktopSidebar() {
       </div>
       
       {/* Nav Items */}
-      <nav className="flex-1 space-y-2 px-4 py-2">
-        {navItems.map((item) => {
-          // Special case: if pathname is not matching but it's the matching engine active state in mockup 9
-          const isActive = pathname.includes(item.href) || (item.href === '/matching' && pathname.includes('/matching'));
-          return (
+      <nav className="flex-1 space-y-2 px-4 py-2 overflow-y-auto">
+        <div className="mb-4">
+          <p className="px-4 text-[10px] font-bold text-[#1e3a5f]/30 uppercase tracking-[0.2em] mb-2">Main Menu</p>
+          {navItems.map((item) => {
+            const isActive = pathname.includes(item.href) || (item.href === '/matching' && pathname.includes('/matching'));
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-4 rounded-2xl px-4 py-3 text-sm font-semibold transition-all mb-1",
+                  isActive
+                    ? "bg-[#eaf4f4] text-[#2cb1bc]"
+                    : "text-[#1e3a5f]/70 hover:bg-gray-50 hover:text-[#1e3a5f]"
+                )}
+              >
+                <item.icon className={cn("h-5 w-5", isActive ? "text-[#2cb1bc]" : "text-[#1e3a5f]/50")} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Preferences Section */}
+        <div className="pt-2 border-t border-gray-50 mt-4">
+          <p className="px-4 text-[10px] font-bold text-[#1e3a5f]/30 uppercase tracking-[0.2em] mb-2">Matching Preferences</p>
+          <div className="space-y-1">
+            <button className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-gray-50 text-left group">
+              <div className="flex items-center gap-3">
+                <Heart className="w-4 h-4 text-rose-400" />
+                <span className="text-sm font-semibold text-[#1e3a5f]/70 group-hover:text-[#1e3a5f]">Based on Interests</span>
+              </div>
+              <div className="w-4 h-4 rounded-full border-2 border-[#2cb1bc] bg-[#2cb1bc] flex items-center justify-center">
+                <div className="w-1.5 h-1.5 rounded-full bg-white" />
+              </div>
+            </button>
+            
+            <button className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-gray-50 text-left group">
+              <div className="flex items-center gap-3">
+                <Flame className="w-4 h-4 text-orange-400" />
+                <span className="text-sm font-semibold text-[#1e3a5f]/70 group-hover:text-[#1e3a5f]">Random Thrill</span>
+              </div>
+              <div className="w-4 h-4 rounded-full border-2 border-gray-200" />
+            </button>
+
+            <button className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-gray-50 text-left group">
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-4 h-4 text-purple-400" />
+                <span className="text-sm font-semibold text-[#1e3a5f]/70 group-hover:text-[#1e3a5f]">Women-Only Mode</span>
+              </div>
+              <div className="w-8 h-4 rounded-full bg-gray-200 relative">
+                <div className="absolute left-0.5 top-0.5 w-3 h-3 rounded-full bg-white shadow-sm" />
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {isAdmin && (
+          <div className="pt-4">
             <Link
-              key={item.href}
-              href={item.href}
+              href="/admin"
               className={cn(
                 "flex items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all",
-                isActive
-                  ? "bg-[#eaf4f4] text-[#2cb1bc]"
-                  : "text-[#1e3a5f]/70 hover:bg-gray-50 hover:text-[#1e3a5f]"
+                pathname.startsWith("/admin")
+                  ? "bg-red-50 text-red-600 border border-red-100"
+                  : "text-[#1e3a5f]/60 hover:bg-red-50/50 hover:text-red-500"
               )}
             >
-              <item.icon className={cn("h-5 w-5", isActive ? "text-[#2cb1bc]" : "text-[#1e3a5f]/50")} />
-              {item.label}
+              <ShieldCheck className={cn("h-5 w-5", pathname.startsWith("/admin") ? "text-red-500" : "text-[#1e3a5f]/30")} />
+              Admin Panel
             </Link>
-          );
-        })}
-        {isAdmin && (
-          <Link
-            href="/admin"
-            className={cn(
-              "flex items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all",
-              pathname.startsWith("/admin")
-                ? "bg-red-50 text-red-600 border border-red-100"
-                : "text-[#1e3a5f]/60 hover:bg-red-50/50 hover:text-red-500"
-            )}
-          >
-            <ShieldCheck className={cn("h-5 w-5", pathname.startsWith("/admin") ? "text-red-500" : "text-[#1e3a5f]/30")} />
-            Admin Panel
-          </Link>
+          </div>
         )}
       </nav>
 
