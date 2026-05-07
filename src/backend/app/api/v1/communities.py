@@ -16,6 +16,7 @@ from app.schemas.community import (
 )
 from app.schemas.common import PaginatedResponse
 from app.core.exceptions import NotFoundError, AppError
+from app.services.privacy import apply_privacy_filter
 
 router = APIRouter()
 
@@ -244,6 +245,7 @@ async def leave_community(
 async def list_members(
     community_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(GroupMember, User)
@@ -252,16 +254,19 @@ async def list_members(
         .order_by(GroupMember.created_at)
     )
     rows = result.all()
-    return [
-        CommunityMemberResponse(
-            id=gm.id,
-            user_id=gm.user_id,
-            name=u.name,
-            role=gm.role,
-            joined_at=gm.created_at,
+    members = []
+    for gm, u in rows:
+        filtered = apply_privacy_filter(current_user.id, u)
+        members.append(
+            CommunityMemberResponse(
+                id=gm.id,
+                user_id=gm.user_id,
+                name=filtered.get("name"),
+                role=gm.role,
+                joined_at=gm.created_at,
+            )
         )
-        for gm, u in rows
-    ]
+    return members
 
 
 async def _build_community_response(

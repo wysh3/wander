@@ -7,6 +7,7 @@ import { useState } from "react";
 import { ReportDialog } from "@/components/shared/report-dialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { 
   User as UserIcon, 
   MapPin, 
@@ -22,12 +23,14 @@ import {
   MoreVertical,
   Flame,
   Award,
-  Gift
+  Gift,
+  Lock
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const [isReportOpen, setIsReportOpen] = useState(false);
 
@@ -260,7 +263,7 @@ export default function ProfilePage() {
         {[
           { label: "Edit Profile", href: "/profile/edit", icon: UserIcon, color: "text-blue-500", bg: "bg-blue-50" },
           { label: "Safety & Emergency", href: "/profile/safety", icon: Shield, color: "text-green-500", bg: "bg-green-50" },
-          { label: "Privacy Settings", href: "/profile/privacy", icon: Sparkles, color: "text-purple-500", bg: "bg-purple-50" },
+          { label: "Privacy Settings", href: "/profile/privacy", icon: Lock, color: "text-purple-500", bg: "bg-purple-50" },
           { label: "Invite & Earn", href: "/profile/support", icon: Gift, color: "text-rose-500", bg: "bg-rose-50" },
           { label: "App Settings", href: "/profile/settings", icon: Settings, color: "text-gray-500", bg: "bg-gray-50" },
         ].map((item) => (

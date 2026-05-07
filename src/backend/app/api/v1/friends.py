@@ -8,6 +8,7 @@ from app.models.user import User
 from app.models.friend_connection import FriendConnection
 from app.models.user_block import UserBlock
 from app.services.friend_matching import get_friend_suggestions
+from app.services.privacy import apply_privacy_filter
 from app.schemas.friend import (
     FriendSuggestionResponse,
     UserBriefResponse,
@@ -19,13 +20,14 @@ from app.core.exceptions import NotFoundError, AppError
 router = APIRouter()
 
 
-def _user_brief(user: User) -> UserBriefResponse:
+def _user_brief(user: User, viewer_id: uuid.UUID | None = None) -> UserBriefResponse:
+    filtered = apply_privacy_filter(viewer_id, user)
     return UserBriefResponse(
         id=user.id,
-        name=user.name,
-        vibe=user.vibe,
-        interests=user.interests or [],
-        home_area=user.home_area,
+        name=filtered.get("name"),
+        vibe=filtered.get("vibe"),
+        interests=filtered.get("interests") or [],
+        home_area=filtered.get("home_area"),
     )
 
 
@@ -38,7 +40,7 @@ async def get_suggestions(
     suggestions = await get_friend_suggestions(current_user, db, limit)
     return [
         FriendSuggestionResponse(
-            user=_user_brief(s["user"]),
+            user=_user_brief(s["user"], current_user.id),
             compatibility=s["compatibility"],
             shared_interests=s.get("shared_interests", []),
             distance_km=s.get("distance_km", 0.0),
@@ -115,7 +117,7 @@ async def get_requests(
         if from_user:
             output.append(FriendRequestResponse(
                 id=req.id,
-                from_user=_user_brief(from_user),
+                from_user=_user_brief(from_user, current_user.id),
                 compatibility_score=req.compatibility_score,
                 created_at=req.created_at,
             ))
@@ -188,7 +190,7 @@ async def list_friends(
         if friend:
             output.append(FriendResponse(
                 id=conn.id,
-                friend=_user_brief(friend),
+                friend=_user_brief(friend, current_user.id),
                 compatibility_score=conn.compatibility_score,
                 connected_at=conn.updated_at or conn.created_at,
             ))

@@ -420,6 +420,24 @@ async def seed():
 
     # Insert all users (20 demo + 1 admin)
     all_users = USERS + [ADMIN]
+
+    # Default privacy settings: public, full visibility
+    for u in all_users:
+        u["profile_visibility"] = "public"
+        u["show_full_name"] = True
+        u["show_interests"] = True
+        u["show_location"] = True
+
+    # Override 4 users to private with varied toggle combinations
+    PRIVACY_OVERRIDES = {
+        5:  {"profile_visibility": "private", "show_full_name": False, "show_interests": True,  "show_location": False},
+        10: {"profile_visibility": "private", "show_full_name": False, "show_interests": False, "show_location": False},
+        14: {"profile_visibility": "private", "show_full_name": True,  "show_interests": False, "show_location": True},
+        18: {"profile_visibility": "private", "show_full_name": False, "show_interests": True,  "show_location": True},
+    }
+    for idx, override in PRIVACY_OVERRIDES.items():
+        all_users[idx].update(override)
+
     inserted = 0
     skipped = 0
 
@@ -436,7 +454,8 @@ async def seed():
                 home_area, home_lat, home_lng, city,
                 onboarding_completed, role,
                 screen_time_before, screen_time_after,
-                total_experiences, created_at
+                total_experiences, created_at,
+                profile_visibility, show_full_name, show_interests, show_location
             ) VALUES (
                 $1, $2, $3, $4, $5, $6,
                 $7, $8,
@@ -445,7 +464,8 @@ async def seed():
                 $13, $14, $15, $16,
                 $17, $18,
                 $19, $20,
-                $21, $22
+                $21, $22,
+                $23, $24, $25, $26
             )
             ON CONFLICT (phone) DO NOTHING
         """,
@@ -458,6 +478,7 @@ async def seed():
             u["onboarding_completed"], u["role"],
             u["screen_time_before"], u["screen_time_after"],
             u["total_experiences"], u["created_at"],
+            u["profile_visibility"], u["show_full_name"], u["show_interests"], u["show_location"],
         )
 
         if result == "INSERT 0 1":
@@ -471,6 +492,28 @@ async def seed():
         print(f"  - 1 admin (phone: {ADMIN['phone']})")
     if skipped > 0:
         print("  (some phones already existed — idempotent seed)")
+
+    # Update privacy settings for the 4 private users (even if already inserted)
+    updated_privacy = 0
+    for override_idx, override in PRIVACY_OVERRIDES.items():
+        phone = all_users[override_idx]["phone"]
+        result = await conn.execute("""
+            UPDATE users SET
+                profile_visibility = $1,
+                show_full_name = $2,
+                show_interests = $3,
+                show_location = $4
+            WHERE phone = $5
+        """,
+            override["profile_visibility"],
+            override["show_full_name"],
+            override["show_interests"],
+            override["show_location"],
+            phone,
+        )
+        if "UPDATE 1" in result:
+            updated_privacy += 1
+    print(f"Privacy updated for {updated_privacy} users")
 
     await conn.close()
 

@@ -66,6 +66,12 @@ class User(Base):
     emergency_contact_phone: Mapped[str | None] = mapped_column(String(15))
     women_only_preference: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # Privacy settings
+    profile_visibility: Mapped[str] = mapped_column(String(10), default="public")
+    show_full_name: Mapped[bool] = mapped_column(Boolean, default=True)
+    show_interests: Mapped[bool] = mapped_column(Boolean, default=True)
+    show_location: Mapped[bool] = mapped_column(Boolean, default=True)
+
     streak_weeks: Mapped[int] = mapped_column(Integer, default=0)
     total_experiences: Mapped[int] = mapped_column(Integer, default=0)
     total_people_met: Mapped[int] = mapped_column(Integer, default=0)

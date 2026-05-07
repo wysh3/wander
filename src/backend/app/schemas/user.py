@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Literal
 import uuid
 
 
@@ -31,6 +32,11 @@ class UserResponse(BaseModel):
     emergency_contact_phone: str | None = None
     women_only_mode: bool = False
     referral_code: str | None = None
+    profile_visibility: str = "public"
+    show_full_name: bool = True
+    show_interests: bool = True
+    show_location: bool = True
+    women_only_preference: bool = False
     streak_weeks: int = 0
     total_experiences: int = 0
     total_people_met: int = 0
@@ -88,3 +94,10 @@ class UpdateProfileRequest(BaseModel):
     referral_code: str | None = None
     screen_time_before: int | None = None
     screen_time_after: int | None = None
+
+
+class PrivacySettingsUpdate(BaseModel):
+    profile_visibility: Literal["public", "private"]
+    show_full_name: bool
+    show_interests: bool
+    show_location: bool

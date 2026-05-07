@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { apiFetch } from "@/lib/api-client";
 import { Calendar, MapPin, ArrowLeft, Info, MessageCircle, Star, ShieldCheck, MoreVertical } from "lucide-react";
+import { MemberCard } from "@/components/shared/member-card";
 import { format } from "date-fns";
 import { ReportDialog } from "@/components/shared/report-dialog";
 
@@ -104,38 +105,25 @@ export default function GroupDetailPage() {
             Group Members
             <span className="text-[13px] font-medium text-[#1e3a5f]/50 bg-gray-100 px-2.5 py-1 rounded-full">{group.members?.length || 0} People</span>
           </h2>
-          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-            {group.members?.map((m: any, idx: number) => {
-              const isLast = idx === group.members.length - 1;
-              return (
-                <div key={m.id} className={`p-4 flex items-center gap-4 ${!isLast ? 'border-b border-gray-50' : ''} hover:bg-gray-50 transition-colors group cursor-default`}>
-                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                    <img src={`https://i.pravatar.cc/150?u=${m.id}`} alt={m.name || ""} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-[15px] font-bold text-[#1e3a5f]">{m.name}</h4>
-                  </div>
-                  {m.role === 'host' && (
-                    <div className="bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded border border-amber-100">
-                      Host
-                    </div>
-                  )}
-                  {m.role !== 'host' && idx === 1 && (
-                    <div className="bg-purple-50 text-purple-600 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded border border-purple-100">
-                      Newbie
-                    </div>
-                  )}
-                  <button 
-                    onClick={() => setReportTargetId(m.id)}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 sm:opacity-100"
-                    aria-label="Report User"
-                    title="Report this user"
-                  >
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
-                </div>
-              );
-            })}
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm divide-y divide-gray-50">
+            {group.members?.map((m: any) => (
+              <div key={m.id} className="relative group">
+                <MemberCard
+                  id={m.user_id || m.id}
+                  name={m.name}
+                  role={m.role}
+                  className="p-4 hover:bg-gray-50 transition-colors"
+                />
+                <button 
+                  onClick={() => setReportTargetId(m.user_id || m.id)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 sm:opacity-100"
+                  aria-label="Report User"
+                  title="Report this user"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       </div>
