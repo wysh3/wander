@@ -144,3 +144,23 @@ export function uploadImage(file: File): Promise<{ url: string; filename: string
     headers: {}, // Let browser set Content-Type with boundary
   });
 }
+
+// Local Event Generation
+export function generateLocalEvents(data: {
+  areas?: string[];
+  date_from?: string;
+  date_to?: string;
+  limit_per_area?: number;
+}) {
+  return apiFetch<any>(`${ADMIN}/generate-local-events`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function createGeneratedEvents(events: any[]) {
+  return apiFetch<any>(`${ADMIN}/events/bulk-create`, {
+    method: "POST",
+    body: JSON.stringify({ events }),
+  });
+}

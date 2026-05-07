@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, CalendarPlus, Users, UserCheck, ShieldAlert,
-  Settings, Bell, FileText, ChevronLeft, LogOut
+  Settings, Bell, FileText, ChevronLeft, LogOut, Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 const adminNav = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/events", label: "Events", icon: CalendarPlus },
+  { href: "/admin/events/generate", label: "Generate", icon: Sparkles },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/hosts", label: "Hosts", icon: UserCheck },
   { href: "/admin/moderation", label: "Moderation", icon: ShieldAlert },
