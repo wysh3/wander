@@ -34,9 +34,9 @@ def haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
 def cosine_similarity_vecs(a: list[float], b: list[float]) -> float:
     if len(a) != len(b) or len(a) == 0:
         return 0.0
-    dot = sum(x * y for x, y in zip(a, b))
-    norm_a = math.sqrt(sum(x * x for x in a))
-    norm_b = math.sqrt(sum(y * y for y in b))
+    dot = float(sum(x * y for x, y in zip(a, b)))
+    norm_a = math.sqrt(sum(float(x) * float(x) for x in a))
+    norm_b = math.sqrt(sum(float(y) * float(y) for y in b))
     if norm_a == 0 or norm_b == 0:
         return 0.0
     return dot / (norm_a * norm_b)
@@ -122,15 +122,15 @@ async def score_activity(user: User, activity: Activity, db: AsyncSession) -> di
     personality = personality_fit(user, activity)
     social = await social_proof(user, activity, db)
 
-    total = 0.40 * interest + 0.25 * location + 0.15 * personality + 0.20 * social
+    total = float(0.40 * interest + 0.25 * location + 0.15 * personality + 0.20 * social)
 
     return {
         "score": round(total, 2),
         "score_breakdown": {
-            "interest_match": round(interest, 2),
-            "location_score": round(location, 2),
-            "personality_fit": round(personality, 2),
-            "social_proof": round(social, 2),
+            "interest_match": round(float(interest), 2),
+            "location_score": round(float(location), 2),
+            "personality_fit": round(float(personality), 2),
+            "social_proof": round(float(social), 2),
         },
     }
 

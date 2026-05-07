@@ -228,10 +228,10 @@ async def get_friend_suggestions(user: User, db: AsyncSession, limit: int = 10) 
 
         scored.append({
             "user": candidate,
-            "compatibility": round(min(1.0, score), 2),
+            "compatibility": round(float(min(1.0, score)), 2),
             "shared_interests": shared,
             "distance_km": dist_km,
-            "personality_distance": round(pdist, 3),
+            "personality_distance": round(float(pdist), 3),
         })
 
     scored.sort(key=lambda x: x["compatibility"], reverse=True)

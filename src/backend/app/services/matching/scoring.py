@@ -19,9 +19,9 @@ def personality_similarity(user1: User, user2: User) -> float:
     if v1 is None or v2 is None or len(v1) != 5 or len(v2) != 5:
         return 0.0
 
-    weighted_dot = sum(w * a * b for w, a, b in zip(weights, v1, v2))
-    norm1 = sum(w * a * a for w, a in zip(weights, v1)) ** 0.5
-    norm2 = sum(w * b * b for w, b in zip(weights, v2)) ** 0.5
+    weighted_dot = float(sum(w * a * b for w, a, b in zip(weights, v1, v2)))
+    norm1 = float(sum(w * a * a for w, a in zip(weights, v1))) ** 0.5
+    norm2 = float(sum(w * b * b for w, b in zip(weights, v2))) ** 0.5
 
     if norm1 == 0 or norm2 == 0:
         return 0.0
