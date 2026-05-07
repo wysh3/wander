@@ -29,5 +29,6 @@ class Activity(Base):
     max_groups: Mapped[int] = mapped_column(Integer, default=3)
     host_ids: Mapped[list[uuid.UUID] | None] = mapped_column(ARRAY(UUID(as_uuid=True)), default=[])
     phone_free_encouraged: Mapped[bool] = mapped_column(Boolean, default=True)
+    tags: Mapped[list[str] | None] = mapped_column(ARRAY(Text), default=[])
     status: Mapped[str] = mapped_column(String(20), default="open")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
