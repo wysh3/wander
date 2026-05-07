@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, Navigation, Footprints, Car, Zap, Target } from "lucide-react";
+import { Calendar, MapPin, Users, ShieldOff, Navigation, Footprints, Car, Zap, Target } from "lucide-react";
 import { format } from "date-fns";
 import { useLocationStore } from "@/stores/location-store";
+import { getActivityImage } from "@/lib/images";
 
 interface ActivityCardProps {
   id: string;
@@ -25,17 +24,19 @@ interface ActivityCardProps {
   isNearest?: boolean;
 }
 
-const categoryColors: Record<string, string> = {
-  physical: "bg-orange-100 text-orange-800",
-  social_good: "bg-green-100 text-green-800",
-  skill: "bg-blue-100 text-blue-800",
-  mental: "bg-purple-100 text-purple-800",
-  chaotic: "bg-pink-100 text-pink-800",
-  explore: "bg-teal-100 text-teal-800",
-  slow: "bg-amber-100 text-amber-800",
-};
+export function ActivityCard({ 
+  id, title, description, category, area, lat, lng,
+  scheduled_at, group_size_min, group_size_max,
+  participant_count, phone_free_encouraged,
+  distance_km, distanceBand, isNearest,
+}: ActivityCardProps) {
+  
+  const bgImage = getActivityImage(title, category);
+  const formattedCategory = category ? category.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : "";
 
-/** Border + tint keyed by distance band */
+
+
+
 const DISTANCE_STYLES: Record<string, { border: string; tint: string; label: string; labelColor: string; icon: React.ReactNode }> = {
   walking: {
     border: "border-l-green-500",
@@ -81,83 +82,79 @@ function formatDistance(km: number | null | undefined): string {
   return `${Math.round(km)} km`;
 }
 
-export function ActivityCard({
-  id, title, description, category, area, lat, lng,
-  scheduled_at, group_size_min, group_size_max,
-  participant_count, phone_free_encouraged,
-  distance_km, distanceBand, isNearest,
-}: ActivityCardProps) {
   const { lat: userLat, lng: userLng } = useLocationStore();
   const band = distanceBand || "far";
   const style = DISTANCE_STYLES[band] || DISTANCE_STYLES.far;
 
   return (
     <Link href={`/activities/${id}`}>
-      <Card className={`relative overflow-hidden hover:shadow-lg transition-all duration-200 border-l-4 ${style.border} group`}>
-        {/* Distance tint overlay */}
-        <div className={`absolute inset-0 ${style.tint} pointer-events-none`} />
+      <div className="bg-white rounded-[24px] overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col h-full group">
 
-        {/* Hero image area */}
-        <div className="h-36 bg-gradient-to-br from-wander-teal/15 to-wander-coral/15 flex items-center justify-center relative">
-          {/* Nearest badge */}
-          {isNearest && (
-            <div className="absolute top-2 left-2 z-10 flex items-center gap-1 px-2 py-1 rounded-full bg-green-600 text-white text-[10px] font-bold shadow-md">
-              <Target className="h-3 w-3" />
-              Nearest
-            </div>
-          )}
+        {/* Image/Banner Section */}
+        <div 
+          className="h-[180px] w-full relative flex flex-col justify-end bg-gray-100 bg-cover bg-center overflow-hidden"
+        >
+          <div 
+            className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" 
+            style={{ backgroundImage: `url('${bgImage}')` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+
+          {/* Top Left Badge */}
+          <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md rounded-full px-3 py-1 shadow-sm">
+            <span className="text-[11px] font-bold text-[#1e3a5f] tracking-wide">{formattedCategory}</span>
+          </div>
+
           {/* Distance badge (top-right) */}
           {distance_km != null && (
-            <div className={`absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold shadow-sm ${style.labelColor}`}>
+            <div className={`absolute top-4 right-4 z-10 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold shadow-sm ${style.labelColor}`}>
               {style.icon}
               {formatDistance(distance_km)}
             </div>
           )}
-          <span className="text-4xl opacity-80">
-            {category === "physical" ? "🏃" : category === "explore" ? "🌄" : category === "social_good" ? "💚" : "✨"}
-          </span>
-        </div>
 
-        <CardContent className="p-4 space-y-2 relative">
-          {/* Category + phone-free badge */}
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <Badge variant="outline" className={`${categoryColors[category || ""] || ""} text-[10px]`}>
-              {category?.replace("_", " ")}
-            </Badge>
-            {phone_free_encouraged && (
-              <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200 text-[10px]">
-                Phone-Free
-              </Badge>
-            )}
-          </div>
-
-          {/* Title */}
-          <h3 className="font-semibold text-sm line-clamp-1 group-hover:text-wander-teal transition-colors">
-            {title}
-          </h3>
-
-          {/* Description */}
-          {description && (
-            <p className="text-xs text-muted-foreground line-clamp-1">{description}</p>
+          {/* Nearest badge */}
+          {isNearest && (
+            <div className="absolute top-4 right-4 z-10 flex items-center gap-1 px-2 py-1 rounded-full bg-green-600 text-white text-[10px] font-bold shadow-md">
+              <Target className="h-3 w-3" />
+              Nearest
+            </div>
           )}
 
-          {/* Meta row */}
-          <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-            <span className="flex items-center gap-1 whitespace-nowrap">
-              <Calendar className="h-3 w-3" />
-              {format(new Date(scheduled_at), "MMM d, h:mm a")}
-            </span>
-            <span className="flex items-center gap-1 whitespace-nowrap">
-              <MapPin className="h-3 w-3" />
-              {area}
-            </span>
-            <span className="flex items-center gap-1 whitespace-nowrap">
-              <Users className="h-3 w-3" />
-              {group_size_min}–{group_size_max}
-            </span>
+          {/* Bottom Left Badge */}
+          {phone_free_encouraged && (
+            <div className="absolute bottom-4 left-4 bg-[#34c759] rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-md shadow-black/20">
+              <ShieldOff className="w-3 h-3 text-white" />
+              <span className="text-[10px] font-bold text-white tracking-wide">Phone-Free Zone</span>
+            </div>
+          )}
+        </div>
+
+        {/* Content Section */}
+        <div className="p-5 flex-1 flex flex-col">
+          <h3 className="font-bold text-[#1e3a5f] text-[17px] leading-snug mb-4 line-clamp-2">{title}</h3>
+
+          <div className="mt-auto space-y-2.5">
+            <div className="flex items-center gap-2.5">
+              <Calendar className="h-[15px] w-[15px] text-[#2cb1bc]" />
+              <span className="text-[13px] font-medium text-[#1e3a5f]/60">
+                {format(new Date(scheduled_at), "E, d MMM • h:mm a")}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <MapPin className="h-[15px] w-[15px] text-[#2cb1bc]" />
+              <span className="text-[13px] font-medium text-[#1e3a5f]/60">{area}</span>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <Users className="h-[15px] w-[15px] text-[#2cb1bc]" />
+              <span className="text-[13px] font-medium text-[#1e3a5f]/60">{participant_count} going</span>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </Link>
   );
 }
+

@@ -9,20 +9,23 @@ interface ChatBubbleProps {
 
 export function ChatMessage({ content, userName, isOwn, timestamp }: ChatBubbleProps) {
   return (
-    <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-3`}>
-      <div className={`max-w-[80%] ${isOwn ? "order-1" : "order-2"}`}>
-        {!isOwn && <p className="text-xs text-muted-foreground mb-0.5 ml-1">{userName}</p>}
+    <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-4`}>
+      <div className={`max-w-[75%] flex flex-col ${isOwn ? "items-end" : "items-start"}`}>
+        {!isOwn && <span className="text-[11px] font-bold text-[#1e3a5f]/50 mb-1 ml-1">{userName}</span>}
         <div
-          className={`rounded-2xl px-4 py-2 text-sm ${
-            isOwn ? "bg-primary text-primary-foreground rounded-br-md" : "bg-muted rounded-bl-md"
+          className={`px-4 py-2.5 text-[15px] shadow-sm ${
+            isOwn 
+              ? "bg-[#2cb1bc] text-white rounded-[20px] rounded-br-sm" 
+              : "bg-[#f4f7f8] text-[#1e3a5f] rounded-[20px] rounded-bl-sm border border-gray-100"
           }`}
         >
           {content}
         </div>
-        <p className="text-xs text-muted-foreground mt-0.5 ml-1">
+        <span className={`text-[10px] font-semibold text-[#1e3a5f]/40 mt-1 ${isOwn ? "mr-1" : "ml-1"}`}>
           {new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-        </p>
+        </span>
       </div>
     </div>
   );
 }
+

@@ -14,8 +14,8 @@ export function HostCard({ name, rating_avg, specialties, total_experiences_host
   return (
     <Card className="p-4">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-wander-teal to-wander-coral flex items-center justify-center text-white font-bold">
-          {name[0]}
+        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
+          <img src={`https://i.pravatar.cc/150?u=host-${name}`} alt={name} className="w-full h-full object-cover" />
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
