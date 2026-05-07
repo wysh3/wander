@@ -42,6 +42,12 @@ class User(Base):
     city: Mapped[str] = mapped_column(String(50), default="Bangalore")
     travel_radius_km: Mapped[int] = mapped_column(Integer, default=15)
 
+    # Gamification
+    current_streak: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    longest_streak: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    last_streak_date: Mapped[datetime | None] = mapped_column(Date)
+    badges: Mapped[list[str] | None] = mapped_column(ARRAY(Text), default=[], server_default="{}")
+
     # Live geo-tracking for real-time matchmaking
     live_lat: Mapped[float | None] = mapped_column(Float(10))
     live_lng: Mapped[float | None] = mapped_column(Float(10))

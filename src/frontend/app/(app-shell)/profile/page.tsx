@@ -5,6 +5,8 @@ import { apiFetch } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
 import { useState } from "react";
 import { ReportDialog } from "@/components/shared/report-dialog";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { 
   User as UserIcon, 
   MapPin, 
@@ -17,7 +19,10 @@ import {
   ChevronRight,
   Sparkles,
   Camera,
-  MoreVertical
+  MoreVertical,
+  Flame,
+  Award,
+  Gift
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -31,16 +36,42 @@ export default function ProfilePage() {
     enabled: !!user?.id,
   });
 
+  const queryClient = useQueryClient();
+
+  // Fetch gamification status
+  const { data: gamification } = useQuery<any>({
+    queryKey: ["gamification", user?.id],
+    queryFn: () => apiFetch(`/gamification/status`),
+    enabled: !!user?.id,
+  });
+
+  // Daily check-in
+  const { mutate: checkIn } = useMutation({
+    mutationFn: () => apiFetch("/gamification/check-in", { method: "POST" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["gamification"] })
+  });
+
+  useEffect(() => {
+    if (user?.id) checkIn();
+  }, [user?.id, checkIn]);
+
   if (isLoading) return <div className="h-[80vh] bg-gray-50 animate-pulse rounded-[32px] mt-4" />;
 
-  const userData = profile || {
+  // HACKATHON SIMULATION: Inject impressive 1-month-usage fake data
+  const userData = profile ? {
+    ...profile,
+    total_experiences: profile.total_experiences || 14,
+    total_people_met: 47,
+    total_neighborhoods_explored: 8,
+    member_since: "April 2026"
+  } : {
     name: "User",
     vibe: "Urban Explorer",
     interests: ["Photography", "Nature", "Cafes", "Trekking"],
-    total_experiences: 12,
-    total_people_met: 48,
+    total_experiences: 14,
+    total_people_met: 47,
     total_neighborhoods_explored: 8,
-    streak_weeks: 4
+    member_since: "April 2026"
   };
 
   return (
@@ -76,9 +107,62 @@ export default function ProfilePage() {
             <Sparkles className="w-4 h-4 text-[#2cb1bc]" />
             <span className="text-[15px] font-bold text-[#2cb1bc]">{userData.vibe}</span>
           </div>
-          <p className="text-[13px] font-medium text-[#1e3a5f]/40 mt-2">Member since May 2024</p>
+          <p className="text-[13px] font-medium text-[#1e3a5f]/40 mt-2">Member since {userData.member_since}</p>
         </div>
       </motion.div>
+
+      {/* Gamification: Badges & Streaks */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="grid grid-cols-2 gap-3"
+      >
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 border border-orange-100 rounded-3xl p-5 text-center shadow-sm relative overflow-hidden">
+          <Flame className="w-8 h-8 text-orange-500 mx-auto mb-2 opacity-80" />
+          <p className="text-3xl font-black text-orange-600">{gamification?.current_streak || 0}</p>
+          <p className="text-[11px] font-bold text-orange-600/60 uppercase tracking-wider mt-1">Day Streak</p>
+          {(gamification?.current_streak || 0) < 7 ? (
+            <p className="text-[10px] text-orange-500/80 mt-2 font-medium leading-tight">
+              {7 - (gamification?.current_streak || 0)} days to Premium Discount!
+            </p>
+          ) : (
+            <div className="mt-2 inline-flex items-center gap-1 bg-orange-500/10 px-2 py-1 rounded-full border border-orange-500/20">
+              <Sparkles className="w-3 h-3 text-orange-500" />
+              <span className="text-[10px] font-bold text-orange-600">20% Premium Sub Discount Active!</span>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-100 rounded-3xl p-5 text-center shadow-sm">
+          <Award className="w-8 h-8 text-indigo-500 mx-auto mb-2 opacity-80" />
+          <p className="text-3xl font-black text-indigo-600">{gamification?.badges?.length || 0}</p>
+          <p className="text-[11px] font-bold text-indigo-600/60 uppercase tracking-wider mt-1">Badges Unlocked</p>
+        </div>
+      </motion.div>
+
+      {gamification?.badges?.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm"
+        >
+          <h3 className="font-bold text-[16px] text-[#1e3a5f] mb-4 flex items-center gap-2">
+            <Gift className="w-5 h-5 text-[#2cb1bc]" /> Your Achievements
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {gamification.badges.map((badge: string) => (
+              <div key={badge} className="flex items-center gap-2 px-3 py-1.5 bg-[#eaf4f4]/50 border border-[#2cb1bc]/20 rounded-full">
+                <Award className="w-4 h-4 text-[#2cb1bc]" />
+                <span className="text-[12px] font-bold text-[#1e3a5f]/80 capitalize">
+                  {badge.replace(/_/g, ' ')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Impact Stats */}
       <div className="grid grid-cols-3 gap-3">
