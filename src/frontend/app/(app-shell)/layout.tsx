@@ -2,8 +2,6 @@
 
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { DesktopSidebar } from "@/components/layout/desktop-sidebar";
-import { SafeAreaTop } from "@/components/layout/safe-area-top";
-import { SafeAreaBottom } from "@/components/layout/safe-area-bottom";
 import { useAuthStore } from "@/stores/auth-store";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -21,14 +19,17 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex min-h-screen">
-      <SafeAreaTop />
+    <div className="flex min-h-screen bg-[#fcfcfc] font-sans">
+      {/* Safe Area Top for Mobile */}
+      <div className="safe-top bg-[#fcfcfc] md:hidden w-full fixed top-0 z-50"></div>
+      
       <DesktopSidebar />
-      <main className="flex-1 pb-16 md:pb-0">
-        <div className="container py-6">{children}</div>
+      <main className="flex-1 md:ml-[256px] pb-28 md:pb-0 min-h-screen overflow-x-hidden pt-[env(safe-area-inset-top,0px)] md:pt-0">
+        <div className="max-w-6xl mx-auto p-4 md:p-8 lg:p-10">{children}</div>
       </main>
       <MobileTabBar />
-      <SafeAreaBottom />
     </div>
   );
 }
+
+

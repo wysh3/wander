@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Siren } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 
 interface SOSButtonProps {
   onActivate: () => void;
@@ -51,25 +51,31 @@ export function SOSButton({ onActivate, active }: SOSButtonProps) {
   }, []);
 
   return (
-    <button
-      onMouseDown={startHold}
-      onMouseUp={cancelHold}
-      onMouseLeave={cancelHold}
-      onTouchStart={startHold}
-      onTouchEnd={cancelHold}
-      className="relative w-48 h-48 rounded-full flex items-center justify-center select-none transition-all"
-      style={{
-        background: active
-          ? "hsl(var(--destructive))"
-          : `conic-gradient(hsl(var(--destructive)) ${progress}%, hsl(var(--muted)) 0)`,
-      }}
-    >
-      <div className="absolute inset-4 rounded-full bg-background flex items-center justify-center">
-        <Siren className={`h-12 w-12 ${active ? "text-destructive animate-pulse" : "text-destructive/70"}`} />
-      </div>
-      <span className="absolute -bottom-8 text-sm font-medium text-muted-foreground">
-        {active ? "SOS Active" : holding ? "Hold..." : "Hold 2s for SOS"}
-      </span>
-    </button>
+    <div className="flex flex-col items-center">
+      <button
+        onMouseDown={startHold}
+        onMouseUp={cancelHold}
+        onMouseLeave={cancelHold}
+        onTouchStart={startHold}
+        onTouchEnd={cancelHold}
+        className={`relative w-48 h-48 rounded-full flex items-center justify-center select-none transition-transform duration-300 ${holding && !active ? "scale-95" : ""}`}
+        style={{
+          background: active
+            ? "#ef4444"
+            : `conic-gradient(#ef4444 ${progress}%, #fca5a5 0)`,
+          boxShadow: active ? "0 0 40px rgba(239,68,68,0.5)" : "0 8px 30px rgba(239,68,68,0.2)",
+        }}
+      >
+        <div className={`absolute inset-3 rounded-full flex items-center justify-center ${active ? "bg-red-600" : "bg-white"}`}>
+          <div className={`absolute inset-2 rounded-full ${active ? "bg-red-500" : "bg-red-50"}`}></div>
+          <ShieldAlert className={`relative z-10 w-16 h-16 ${active ? "text-white animate-pulse" : "text-red-500"}`} />
+        </div>
+      </button>
+      
+      <p className={`mt-8 text-sm font-bold uppercase tracking-widest ${active ? "text-red-500" : "text-[#1e3a5f]/40"}`}>
+        {active ? "SOS ACTIVE" : holding ? "HOLDING..." : "HOLD 2S FOR SOS"}
+      </p>
+    </div>
   );
 }
+

@@ -14,12 +14,12 @@ export default function ReportPage() {
     enabled: !!user?.id,
   });
 
-  if (isLoading) return <div className="h-96 bg-muted animate-pulse rounded-xl" />;
+  if (isLoading) return <div className="h-[60vh] bg-gray-100 animate-pulse rounded-[32px]" />;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-center">Wander Report</h1>
+    <div className="h-full">
       {data && <WanderReport data={data} />}
     </div>
   );
 }
+
