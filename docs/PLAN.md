@@ -71,7 +71,7 @@ Wander is a platform that takes strangers from the same city, places them into A
 
 ### Scope Exclusions
 
-- Payment/subscription processing (mock ₹199 badge)
+
 - Complete venue management (seeded venue data)
 - User-created activities (15-20 seeded Bangalore activities)
 - Push notifications (Web Push API for reminder only in demo)
@@ -96,7 +96,7 @@ Wander is a platform that takes strangers from the same city, places them into A
 | Real-time | FastAPI WebSockets + Redis | Chat messages (TTL), SOS alerts, location sharing, session cache |
 | Maps | Google Maps API (Distance Matrix, Geocoding, Places) | Accurate travel time and venue data |
 | PWA | manifest.json + service worker | Installable, offline shell, native feel |
-| Testing | pytest (backend) + vitest (frontend) + playwright (E2E) | Full coverage across stack |
+| Testing | pytest (backend) + vitest (frontend) | Full coverage across stack |
 | CI/CD | GitHub Actions | Lint → typecheck → test → build on PR |
 | Deploy | Vercel (frontend) + Railway (backend) + Supabase (Postgres + Redis) | Serverless frontend, scalable backend |
 
@@ -330,9 +330,7 @@ frontend/
 └── tests/
     ├── api-client.test.ts
     ├── use-chat.test.ts
-    ├── use-sos.test.ts
-    └── e2e/
-        └── demo-flow.spec.ts     # Playwright E2E: signup → matching → chat → SOS → report
+    └── use-sos.test.ts
 ```
 
 ---
@@ -1408,7 +1406,7 @@ AI Onboarding and Verification are off the critical path (Priya can be pre-confi
 ### Testing Philosophy
 
 - Write backend tests alongside the code (pytest + SQLite + fakeredis)
-- Frontend: manual verification through the demo flow — no time for Playwright
+- Frontend: manual verification through the demo flow
 - SOS timing tested 10x before presenting to ensure <3s delivery
 - Matching engine benchmarked on 12/20 users to confirm <2s solve time
 
@@ -1438,7 +1436,7 @@ Phase 5: Frontend Polish ── depends on: Phases 1-4 (all APIs)
   └── Animations, PWA, responsive layouts
 
 Phase 6: Seed + Rehearsal ── depends on: Phases 1-5
-  └── Seed data, E2E, backup video, pitch rehearsal
+  └── Seed data, backup video, pitch rehearsal
 ```
 
 ### Parallel Work Streams
