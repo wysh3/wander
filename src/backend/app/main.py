@@ -1,0 +1,105 @@
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+import structlog
+import time
+
+from app.config import get_settings
+from app.core.exceptions import AppError
+from app.core.logging import setup_logging
+from app.api.v1.router import router as v1_router
+from app.db.redis import init_redis, close_redis, _redis_pool
+
+settings = get_settings()
+logger = structlog.get_logger()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    setup_logging()
+    logger.info("wander_api_starting", environment=settings.ENVIRONMENT)
+    await init_redis()
+    yield
+    await close_redis()
+    logger.info("wander_api_shutdown")
+
+
+app = FastAPI(
+    title="Wander API",
+    description="AI That Cures Loneliness",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    if _redis_pool and request.url.path.startswith("/api/"):
+        client_ip = request.client.host if request.client else "unknown"
+        key = f"ratelimit:{client_ip}:{request.url.path}"
+        try:
+            current = await _redis_pool.get(key)
+            count = int(current) + 1 if current else 1
+            pipe = _redis_pool.pipeline()
+            pipe.set(key, count, ex=60)
+            pipe.ttl(key)
+            results = await pipe.execute()
+            ttl = results[1] if len(results) > 1 else 60
+        except Exception:
+            return await call_next(request)
+
+        limit = 100
+        remaining = max(0, limit - count)
+        if count > limit:
+            response = JSONResponse(
+                status_code=429,
+                content={"error": {"code": "RATE_LIMITED", "message": "Too many requests", "details": {}}},
+            )
+        else:
+            response = await call_next(request)
+
+        response.headers["X-RateLimit-Limit"] = str(limit)
+        response.headers["X-RateLimit-Remaining"] = str(remaining)
+        response.headers["X-RateLimit-Reset"] = str(ttl)
+        return response
+
+    return await call_next(request)
+
+
+@app.middleware("http")
+async def logging_middleware(request: Request, call_next):
+    logger.info("request", method=request.method, path=request.url.path)
+    response = await call_next(request)
+    logger.info("response", status_code=response.status_code)
+    return response
+
+
+@app.exception_handler(AppError)
+async def app_error_handler(request: Request, exc: AppError):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": {
+                "code": exc.code,
+                "message": exc.message,
+                "details": exc.details,
+            }
+        },
+    )
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "service": "wander-api"}
+
+
+app.include_router(v1_router, prefix="/api/v1")
