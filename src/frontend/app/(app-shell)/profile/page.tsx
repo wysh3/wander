@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
+import { useRouter } from "next/navigation";
 import { 
   User as UserIcon, 
   MapPin, 
@@ -14,11 +15,13 @@ import {
   Calendar,
   ChevronRight,
   Sparkles,
-  Camera
+  Camera,
+  Lock
 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { user } = useAuthStore();
 
   const { data: profile, isLoading } = useQuery<any>({
@@ -114,16 +117,17 @@ export default function ProfilePage() {
         transition={{ delay: 0.6 }}
         className="space-y-3"
       >
-        {[
-          { label: "Edit Profile", icon: UserIcon, color: "text-blue-500", bg: "bg-blue-50" },
-          { label: "Safety & Emergency", icon: Shield, color: "text-green-500", bg: "bg-green-50" },
-          { label: "Privacy Settings", icon: Sparkles, color: "text-purple-500", bg: "bg-purple-50" },
-          { label: "Support", icon: Heart, color: "text-rose-500", bg: "bg-rose-50" },
-          { label: "App Settings", icon: Settings, color: "text-gray-500", bg: "bg-gray-50" },
+      {[
+          { label: "Edit Profile", icon: UserIcon, color: "text-blue-500", bg: "bg-blue-50", href: null },
+          { label: "Safety & Emergency", icon: Shield, color: "text-green-500", bg: "bg-green-50", href: null },
+          { label: "Privacy Settings", icon: Lock, color: "text-purple-500", bg: "bg-purple-50", href: "/settings/privacy" },
+          { label: "Support", icon: Heart, color: "text-rose-500", bg: "bg-rose-50", href: null },
+          { label: "App Settings", icon: Settings, color: "text-gray-500", bg: "bg-gray-50", href: null },
         ].map((item) => (
           <div 
             key={item.label}
-            className="flex items-center justify-between p-5 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+            onClick={() => item.href && router.push(item.href)}
+            className={`flex items-center justify-between p-5 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group ${item.href ? "cursor-pointer" : "cursor-default"}`}
           >
             <div className="flex items-center gap-4">
               <div className={`w-10 h-10 rounded-2xl ${item.bg} flex items-center justify-center ${item.color}`}>

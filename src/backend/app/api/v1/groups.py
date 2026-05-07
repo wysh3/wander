@@ -8,6 +8,7 @@ from app.models.user import User
 from app.models.group import Group, GroupMember
 from app.schemas.group import GroupResponse, GroupMemberResponse, RateGroupRequest
 from app.core.exceptions import NotFoundError
+from app.services.privacy import apply_privacy_filter
 
 router = APIRouter()
 
@@ -27,6 +28,7 @@ async def list_my_groups(
     )
     groups = result.scalars().all()
 
+    is_admin = getattr(current_user, "role", "user") == "admin"
     output = []
     for group in groups:
         members_result = await db.execute(
@@ -34,20 +36,27 @@ async def list_my_groups(
             .where(GroupMember.group_id == group.id)
         )
         rows = members_result.all()
-        members = [
-            GroupMemberResponse(
-                id=gm.id, user_id=gm.user_id, name=u.name,
-                role=gm.role, checked_in=gm.checked_in, rating=gm.rating,
+        members = []
+        for gm, u in rows:
+            filtered = apply_privacy_filter(current_user.id, u, is_admin=is_admin)
+            members.append(
+                GroupMemberResponse(
+                    id=gm.id,
+                    user_id=gm.user_id,
+                    name=filtered.get("name"),
+                    role=gm.role,
+                    checked_in=gm.checked_in,
+                    rating=gm.rating,
+                )
             )
-            for gm, u in rows
-        ]
 
         host_name = None
         if group.host_id:
             host_result = await db.execute(select(User).where(User.id == group.host_id))
             host_user = host_result.scalar_one_or_none()
             if host_user:
-                host_name = host_user.name
+                filtered_host = apply_privacy_filter(current_user.id, host_user, is_admin=is_admin)
+                host_name = filtered_host.get("name")
 
         from app.models.activity import Activity
         activity_result = await db.execute(select(Activity).where(Activity.id == group.activity_id))
@@ -71,35 +80,41 @@ async def list_my_groups(
 async def get_group(
     group_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(select(Group).where(Group.id == group_id))
     group = result.scalar_one_or_none()
     if not group:
         raise NotFoundError("Group", str(group_id))
 
+    is_admin = getattr(current_user, "role", "user") == "admin"
+
     members_result = await db.execute(
         select(GroupMember, User).join(User, GroupMember.user_id == User.id)
         .where(GroupMember.group_id == group_id)
     )
     rows = members_result.all()
-    members = [
-        GroupMemberResponse(
-            id=gm.id,
-            user_id=gm.user_id,
-            name=u.name,
-            role=gm.role,
-            checked_in=gm.checked_in,
-            rating=gm.rating,
+    members = []
+    for gm, u in rows:
+        filtered = apply_privacy_filter(current_user.id, u, is_admin=is_admin)
+        members.append(
+            GroupMemberResponse(
+                id=gm.id,
+                user_id=gm.user_id,
+                name=filtered.get("name"),
+                role=gm.role,
+                checked_in=gm.checked_in,
+                rating=gm.rating,
+            )
         )
-        for gm, u in rows
-    ]
 
     host_name = None
     if group.host_id:
         host_result = await db.execute(select(User).where(User.id == group.host_id))
         host_user = host_result.scalar_one_or_none()
         if host_user:
-            host_name = host_user.name
+            filtered_host = apply_privacy_filter(current_user.id, host_user, is_admin=is_admin)
+            host_name = filtered_host.get("name")
 
     from app.models.activity import Activity
     activity_result = await db.execute(select(Activity).where(Activity.id == group.activity_id))

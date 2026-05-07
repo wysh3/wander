@@ -19,6 +19,7 @@ from app.services.nearby_users import (
     filter_by_travel_time,
     get_nearby_count_redis,
 )
+from app.services.privacy import apply_privacy_filter
 from app.core.exceptions import AppError
 
 router = APIRouter()
@@ -149,13 +150,14 @@ async def get_nearby_users(
         else:
             dist = 0.0
 
+        filtered = apply_privacy_filter(current_user.id, u)
         summaries.append(
             NearbyUserSummary(
                 id=str(u.id),
-                name=u.name,
+                name=filtered.get("name"),
                 distance_km=round(dist, 2),
-                vibe=u.vibe,
-                interests=u.interests or [],
+                vibe=filtered.get("vibe"),
+                interests=filtered.get("interests", []),
             )
         )
 

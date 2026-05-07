@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { Globe, Users, Shield, ArrowLeft, MessageCircle, LogOut, Loader2, Plus } from "lucide-react";
+import { MemberCard } from "@/components/shared/member-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -165,24 +166,15 @@ export default function CommunityDetailPage() {
             <CardTitle className="text-lg">Members ({members.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {members.map((m) => (
-                <div
+                <MemberCard
                   key={m.id}
-                  className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-wander-teal/20 flex items-center justify-center text-sm font-medium">
-                      {(m.name || "U")[0].toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{m.name || "User"}</p>
-                    </div>
-                  </div>
-                  <Badge variant={m.role === "founder" ? "default" : "outline"} className="text-xs">
-                    {m.role === "founder" ? "Founder" : m.role === "admin" ? "Admin" : "Member"}
-                  </Badge>
-                </div>
+                  id={m.user_id}
+                  name={m.name}
+                  role={m.role}
+                  className="rounded-lg hover:bg-muted/50 px-3"
+                />
               ))}
             </div>
           </CardContent>
