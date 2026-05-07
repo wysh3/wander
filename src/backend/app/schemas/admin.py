@@ -255,6 +255,46 @@ class PlatformReportResponse(BaseModel):
     impact_summary: str = ""
 
 
+# ── Event Generation ──
+class GenerateEventsRequest(BaseModel):
+    areas: list[str] | None = None
+    date_from: str | None = None
+    date_to: str | None = None
+    limit_per_area: int = 3
+
+
+class GeneratedEvent(BaseModel):
+    title: str
+    description: str | None = None
+    category: str | None = None
+    area: str | None = None
+    city: str = "Bangalore"
+    lat: float | None = None
+    lng: float | None = None
+    scheduled_at: str
+    duration_minutes: int = 120
+    group_size_min: int = 4
+    group_size_max: int = 8
+    max_groups: int = 3
+    min_capacity: int = 4
+    max_capacity: int = 50
+    ticket_type: str = "free"
+    ticket_price_inr: int = 0
+    visibility: str = "public"
+    status: str = "draft"
+    is_local_event: bool = True
+    tags: list[str] = []
+    women_only: bool = False
+    phone_free_encouraged: bool = True
+    source_url: str | None = None
+    confidence: float = 0.5
+
+
+class GenerateEventsResponse(BaseModel):
+    events: list[GeneratedEvent] = []
+    stats: dict = {}
+
+
 # ── Image Upload ──
 class ImageUploadResponse(BaseModel):
     url: str

@@ -21,7 +21,7 @@ from app.schemas.admin import (
     AdminHostResponse, FlaggedUserResponse, SOSIncidentResponse, ChatAuditResponse,
     ResolutionRequest, PlatformConfigResponse, ConfigUpdateRequest,
     NotificationCreate, NotificationResponse, PlatformReportResponse,
-    ImageUploadResponse,
+    ImageUploadResponse, GenerateEventsRequest, GenerateEventsResponse,
 )
 from app.schemas.common import PaginatedResponse
 
@@ -1066,3 +1066,24 @@ async def upload_image(
 
     url = f"/static/uploads/{filename}"
     return ImageUploadResponse(url=url, filename=filename)
+
+
+# ═══════════════════════════════════════════════════════════════
+# 10. LOCAL EVENT GENERATION
+# ═══════════════════════════════════════════════════════════════
+@router.post("/generate-local-events", response_model=GenerateEventsResponse)
+async def generate_local_events(
+    body: GenerateEventsRequest,
+    db: AsyncSession = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    """Generate local events by searching the web for real events in Bangalore areas."""
+    from app.services.event_generation import generate_local_events as gen_events
+
+    result = await gen_events(
+        areas=body.areas,
+        date_from=body.date_from,
+        date_to=body.date_to,
+        limit_per_area=body.limit_per_area,
+    )
+    return GenerateEventsResponse(**result)
