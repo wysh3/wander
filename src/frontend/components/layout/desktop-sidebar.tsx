@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Users, BarChart3, Siren, UserCog } from "lucide-react";
+import { Compass, Users, BarChart3, Siren, UserCog, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/activities", label: "Discover", icon: Compass },
-  { href: "/groups", label: "Groups", icon: Users },
+  { href: "/communities", label: "Communities", icon: Globe },
+  { href: "/groups", label: "My Groups", icon: Users },
   { href: "/report", label: "Wander Report", icon: BarChart3 },
   { href: "/sos", label: "Emergency", icon: Siren },
   { href: "/host/dashboard", label: "Host", icon: UserCog },

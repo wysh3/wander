@@ -19,7 +19,10 @@ async def list_my_groups(
 ):
     result = await db.execute(
         select(Group).join(GroupMember, GroupMember.group_id == Group.id)
-        .where(GroupMember.user_id == current_user.id)
+        .where(
+            GroupMember.user_id == current_user.id,
+            Group.group_type == "matching",
+        )
         .order_by(Group.created_at.desc())
     )
     groups = result.scalars().all()

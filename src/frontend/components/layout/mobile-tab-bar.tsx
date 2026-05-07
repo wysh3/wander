@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Users, BarChart3, Siren, Menu } from "lucide-react";
+import { Compass, Users, BarChart3, Siren, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { href: "/activities", label: "Discover", icon: Compass },
+  { href: "/communities", label: "Communities", icon: Globe },
   { href: "/groups", label: "Groups", icon: Users },
   { href: "/report", label: "Report", icon: BarChart3 },
   { href: "/sos", label: "SOS", icon: Siren },

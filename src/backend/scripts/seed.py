@@ -217,6 +217,50 @@ async def seed():
 
         # Set report stats for Priya
         priya = demo_users[0]
+
+        # Create 5 interest-based communities
+        community_data = [
+            ("Weekend Trekkers", ["trekking", "hiking", "outdoors", "nature"],
+             "A community of trail enthusiasts exploring Bangalore's best treks every weekend.",
+             "Pack your own water. No plastic. Leave no trace.", host_users[0].id),
+            ("Board Game Geeks", ["board_games", "strategy", "gaming", "social"],
+             "Settlers of Catan, Coup, Azul — every Tuesday & Friday. Beginners welcome.",
+             "No spoilers. No rage quits. Respect the game host.", host_users[4].id),
+            ("Yoga & Mindfulness Circle", ["yoga", "meditation", "wellness", "mindfulness"],
+             "Sunday morning yoga under the banyan tree. Guided meditation. Journaling.",
+             "Arrive 5 minutes early. Silence your phone. Listen to your body.", host_users[3].id),
+            ("Street Food Explorers", ["food", "exploring", "street_food", "walking"],
+             "4 stops. 1 happy group. Discover hidden gems across Bangalore's food streets.",
+             "Let the group decide the route. Respect dietary restrictions.", host_users[0].id),
+            ("Photography Walk Club", ["photography", "walking", "street_photography", "creativity"],
+             "Capture Old Bangalore through your lens. Monthly themes. No fancy gear needed.",
+             "Ask before photographing people. Share your best shot in the group.", host_users[0].id),
+        ]
+
+        for name, tags, desc, rules, host_id in community_data:
+            comm = Group(
+                group_type="community",
+                name=name,
+                interest_tags=tags,
+                description=desc,
+                rules=rules,
+                member_limit=100,
+                status="active",
+                host_id=host_id,
+            )
+            session.add(comm)
+            await session.flush()
+
+            # Add host as founder
+            session.add(GroupMember(group_id=comm.id, user_id=host_id, role="founder"))
+
+            # Add 3-5 demo users to each community
+            import random
+            member_count = random.randint(3, 5)
+            for demo_user in random.sample(demo_users, min(member_count, len(demo_users))):
+                if demo_user.id != host_id:
+                    session.add(GroupMember(group_id=comm.id, user_id=demo_user.id, role="member"))
+
         priya.total_experiences = 12
         priya.total_people_met = 47
         priya.total_neighborhoods_explored = 8

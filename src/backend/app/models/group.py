@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Boolean, Integer, Float, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import String, Boolean, Integer, Float, DateTime, ForeignKey, UniqueConstraint, Text, ARRAY
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -11,13 +11,20 @@ class Group(Base):
     __tablename__ = "groups"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    activity_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("activities.id"), nullable=False)
+    activity_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("activities.id"), nullable=True)
     host_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     match_score: Mapped[float | None] = mapped_column(Float(precision=5))
     no_show_risk: Mapped[float | None] = mapped_column(Float(precision=4))
     status: Mapped[str] = mapped_column(String(20), default="pending")
     chat_opens_at: Mapped[datetime | None] = mapped_column(DateTime)
     chat_expires_at: Mapped[datetime | None] = mapped_column(DateTime)
+    group_type: Mapped[str] = mapped_column(String(20), default="matching")
+    name: Mapped[str | None] = mapped_column(String(200))
+    interest_tags: Mapped[list[str] | None] = mapped_column(ARRAY(Text), default=[])
+    description: Mapped[str | None] = mapped_column(Text)
+    cover_image_url: Mapped[str | None] = mapped_column(String(500))
+    rules: Mapped[str | None] = mapped_column(Text)
+    member_limit: Mapped[int] = mapped_column(Integer, default=100)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
