@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import auth, users, activities, matching, groups, chat, sos, reports, admin, host, verification, onboarding, communities, friends, location
+from app.api.v1 import auth, users, activities, matching, groups, chat, sos, reports, user_reports, admin, host, verification, onboarding, communities, friends, location
 
 router = APIRouter()
 router.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -12,6 +12,7 @@ router.include_router(groups.router, prefix="/groups", tags=["groups"])
 router.include_router(chat.router, prefix="/groups", tags=["chat"])
 router.include_router(sos.router, prefix="/sos", tags=["sos"])
 router.include_router(reports.router, prefix="/report", tags=["reports"])
+router.include_router(user_reports.router, prefix="/user-reports", tags=["user_reports"])
 router.include_router(host.router, prefix="/host", tags=["host"])
 router.include_router(admin.router, prefix="/admin", tags=["admin"])
 router.include_router(communities.router, prefix="/communities", tags=["communities"])

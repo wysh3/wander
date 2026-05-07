@@ -9,6 +9,7 @@ from app.models.user_history import UserHistory
 from app.models.friend_connection import FriendConnection
 from app.models.user_block import UserBlock
 from app.models.admin import PlatformConfig, AdminNotification, FlaggedUser
+from app.models.user_report import UserReport
 
 __all__ = [
     "User",
@@ -25,4 +26,5 @@ __all__ = [
     "PlatformConfig",
     "AdminNotification",
     "FlaggedUser",
+    "UserReport",
 ]
