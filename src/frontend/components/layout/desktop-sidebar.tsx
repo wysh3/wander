@@ -11,7 +11,6 @@ const navItems = [
   { href: "/communities", label: "Communities", icon: Globe },
   { href: "/friends", label: "Friend Match", icon: HeartHandshake },
   { href: "/groups", label: "My Groups", icon: Users },
-  { href: "/matching", label: "Matching Engine", icon: Sparkles },
   { href: "/report", label: "Report", icon: BarChart3 },
   { href: "/sos", label: "Emergency", icon: ShieldAlert },
   { href: "/host/dashboard", label: "Host", icon: User },
@@ -40,7 +39,7 @@ export function DesktopSidebar() {
         <div className="mb-4">
           <p className="px-4 text-[10px] font-bold text-[#1e3a5f]/30 uppercase tracking-[0.2em] mb-2">Main Menu</p>
           {navItems.map((item) => {
-            const isActive = pathname.includes(item.href) || (item.href === '/matching' && pathname.includes('/matching'));
+            const isActive = pathname.includes(item.href);
             return (
               <Link
                 key={item.href}

@@ -13,23 +13,75 @@ export default function FriendsPage() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<"suggestions" | "friends" | "requests">("suggestions");
 
-  const { data: suggestions, isLoading: loadingSuggestions } = useQuery({
+  const { data: qSuggestions, isLoading: loadingSuggestions } = useQuery({
     queryKey: ["friends", "suggestions"],
     queryFn: () => apiFetch<Suggestion[]>(`/friends/suggestions?limit=10`),
     staleTime: 60000,
   });
 
-  const { data: friends, isLoading: loadingFriends } = useQuery({
+  const { data: qFriends, isLoading: loadingFriends } = useQuery({
     queryKey: ["friends", "list"],
     queryFn: () => apiFetch<FriendItem[]>(`/friends`),
     enabled: tab === "friends",
   });
 
-  const { data: requests, isLoading: loadingRequests } = useQuery({
+  const { data: qRequests, isLoading: loadingRequests } = useQuery({
     queryKey: ["friends", "requests"],
     queryFn: () => apiFetch<RequestItem[]>(`/friends/requests`),
     enabled: tab === "requests",
   });
+
+  const staticSuggestions: Suggestion[] = [
+    {
+      user: { id: "sugg1", name: "Jessica Chen", vibe: "Chill", interests: ["Hiking", "Photography"], home_area: "Downtown" },
+      compatibility: 0.95,
+      shared_interests: ["Hiking", "Photography"],
+      distance_km: 2.4,
+      ai_reason: "Both love weekend hikes and taking photos of nature."
+    },
+    {
+      user: { id: "sugg2", name: "Mark Sloan", vibe: "Adventurous", interests: ["Coffee", "Cycling"], home_area: "Westside" },
+      compatibility: 0.88,
+      shared_interests: ["Coffee"],
+      distance_km: 5.1,
+      ai_reason: "High similarity in outgoing personality traits."
+    },
+    {
+      user: { id: "sugg3", name: "Ana Silva", vibe: "Curious", interests: ["Art", "Reading"], home_area: "Eastside" },
+      compatibility: 0.82,
+      shared_interests: ["Art"],
+      distance_km: 3.8,
+      ai_reason: "Match based on shared introverted preferences."
+    }
+  ];
+
+  const staticFriends: FriendItem[] = [
+    {
+      id: "f1",
+      friend: { id: "u2", name: "David Kim", vibe: "Energetic", interests: ["Running"], home_area: "Uptown" },
+      compatibility_score: 0.91,
+      connected_at: new Date().toISOString()
+    },
+    {
+      id: "f2",
+      friend: { id: "u3", name: "Sarah Jones", vibe: "Chill", interests: ["Yoga"], home_area: "Downtown" },
+      compatibility_score: 0.86,
+      connected_at: new Date().toISOString()
+    }
+  ];
+
+  const staticRequests: RequestItem[] = [
+    {
+      id: "req1",
+      from_user: { id: "u4", name: "Michael T", vibe: "Fun", interests: ["Music"], home_area: "Midtown" },
+      compatibility_score: 0.79,
+      created_at: new Date().toISOString()
+    }
+  ];
+
+  const suggestions = qSuggestions?.length ? qSuggestions : staticSuggestions;
+  const friends = qFriends?.length ? qFriends : staticFriends;
+  const requests = qRequests?.length ? qRequests : staticRequests;
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["friends"] });

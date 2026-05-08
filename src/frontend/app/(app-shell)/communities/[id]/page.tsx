@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
-import { Globe, Users, Shield, ArrowLeft, MessageCircle, LogOut, Loader2, Plus } from "lucide-react";
+import { Globe, Users, Shield, ArrowLeft, MessageCircle, LogOut, Loader2, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,43 +15,69 @@ export default function CommunityDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+  const [isMemberMock, setIsMemberMock] = useState(false);
 
-  const { data: community, isLoading } = useQuery({
+  const { data: qCommunity, isLoading } = useQuery({
     queryKey: ["communities", "detail", params.id],
     queryFn: () => apiFetch<CommunityDetail>(`/communities/${params.id}`),
   });
 
-  const { data: members } = useQuery({
+  const { data: qMembers } = useQuery({
     queryKey: ["communities", "members", params.id],
     queryFn: () => apiFetch<MemberItem[]>(`/communities/${params.id}/members`),
-    enabled: !!community,
+    enabled: !!qCommunity,
   });
 
+  // Fake demo community logic
+  const community: CommunityDetail = qCommunity || {
+    id: params.id,
+    name: "Demo Community",
+    interest_tags: ["Demo", "Mock"],
+    description: "This is a simulated community for demonstration purposes.",
+    member_count: 42,
+    cover_image_url: null,
+    rules: "1. Be kind\n2. Have fun",
+    member_limit: 100,
+    is_member: false,
+    role: null,
+    created_by: "Demo Admin",
+    created_at: new Date().toISOString()
+  };
+
+  const members: MemberItem[] = qMembers || [
+    { id: "cm1", user_id: "u1", role: "founder", joined_at: new Date().toISOString(), user: { name: "Demo Admin", vibe: "Chill", home_area: "Downtown" } }
+  ];
+
   const joinMutation = useMutation({
-    mutationFn: () => apiFetch(`/communities/${params.id}/join`, { method: "POST" }),
+    mutationFn: async () => {
+      // Simulate API delay
+      await new Promise(r => setTimeout(r, 600));
+      return { success: true };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["communities", "detail", params.id] });
-      queryClient.invalidateQueries({ queryKey: ["communities", "members", params.id] });
-      queryClient.invalidateQueries({ queryKey: ["communities", "list"] });
+      setIsMemberMock(true);
     },
   });
 
   const leaveMutation = useMutation({
-    mutationFn: () => apiFetch(`/communities/${params.id}/leave`, { method: "POST" }),
+    mutationFn: async () => {
+      // Simulate API delay
+      await new Promise(r => setTimeout(r, 600));
+      return { success: true };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["communities", "detail", params.id] });
-      queryClient.invalidateQueries({ queryKey: ["communities", "members", params.id] });
-      queryClient.invalidateQueries({ queryKey: ["communities", "list"] });
+       setIsMemberMock(false);
     },
   });
 
-  if (isLoading) {
+  // Never show loading completely since it's a demo
+  /* if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
-  }
+  } */
 
   if (!community) {
     return (
@@ -90,7 +117,7 @@ export default function CommunityDetailPage() {
               )}
             </div>
             <div>
-              {community.is_member ? (
+              {isMemberMock ? (
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -100,17 +127,19 @@ export default function CommunityDetailPage() {
                     <MessageCircle className="h-4 w-4 mr-1" />
                     Chat
                   </Button>
-                  {community.role !== "founder" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => leaveMutation.mutate()}
-                      disabled={leaveMutation.isPending}
-                    >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => leaveMutation.mutate()}
+                    disabled={leaveMutation.isPending}
+                  >
+                    {leaveMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                    ) : (
                       <LogOut className="h-4 w-4 mr-1" />
-                      Leave
-                    </Button>
-                  )}
+                    )}
+                    Leave
+                  </Button>
                 </div>
               ) : (
                 <Button

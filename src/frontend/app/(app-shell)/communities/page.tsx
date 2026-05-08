@@ -19,6 +19,51 @@ export default function CommunitiesPage() {
     queryFn: () => apiFetch<{ items: CommunityItem[]; next_cursor: string | null }>("/communities?limit=20"),
   });
 
+  const staticCommunities: CommunityItem[] = [
+    {
+      id: "demo-comm-1",
+      name: "Weekend Hikers",
+      interest_tags: ["Hiking", "Nature", "Fitness"],
+      description: "A group for those who love escaping the city every weekend to explore new trails. All skill levels welcome!",
+      member_count: 142,
+      cover_image_url: null,
+      rules: null,
+      member_limit: 500,
+      is_member: true,
+      role: "member",
+      created_by: null,
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "demo-comm-2",
+      name: "Book Club: Sci-Fi & Fantasy",
+      interest_tags: ["Reading", "Sci-Fi", "Fantasy"],
+      description: "Monthly meetups to discuss the best science fiction and fantasy books. Bring recommendations and good vibes.",
+      member_count: 58,
+      cover_image_url: null,
+      rules: null,
+      member_limit: 100,
+      is_member: false,
+      role: null,
+      created_by: null,
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "demo-comm-3",
+      name: "Local Photographers",
+      interest_tags: ["Photography", "Art", "City Scapes"],
+      description: "Join us for weekly photowalks around the city. We share tips, spots, and sometimes grab coffee after.",
+      member_count: 89,
+      cover_image_url: null,
+      rules: null,
+      member_limit: 200,
+      is_member: false,
+      role: null,
+      created_by: null,
+      created_at: new Date().toISOString()
+    }
+  ];
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -39,7 +84,7 @@ export default function CommunitiesPage() {
     );
   }
 
-  const communities = data?.items ?? [];
+  const communities = data?.items?.length ? data.items : staticCommunities;
 
   return (
     <div className="space-y-6">

@@ -50,50 +50,61 @@ export function useMatching(activityId: string) {
     await animateProgress(setProgress, 0, 15, 600);
 
     setPhase("constraints");
-    try {
-      const startResp = await apiFetch<{ total_users: number }>(`/match/${activityId}`, { method: "POST" });
-    } catch (e) {
-      setError("Matching failed to start");
-      return;
-    }
+    // Simulate backend delay for starting the process
+    await new Promise((r) => setTimeout(r, 600));
     await animateProgress(setProgress, 15, 40, 600);
 
     setPhase("solving");
-    let polled = 0;
-    const maxPolls = 30;
-    while (polled < maxPolls) {
-      await new Promise((r) => setTimeout(r, 800));
-      polled++;
-      try {
-        const status = await apiFetch<{ status: string; progress: number; phase?: string; total_users?: number; geo_method?: string; search_radius_km?: number }>(
-          `/match/${activityId}/status`
-        );
-        const clientProgress = 40 + (status.progress || 0) * 0.55 / 100;
-        setProgress(Math.min(clientProgress, 95));
-        
-        // Update stats if provided
-        if (status.geo_method || status.search_radius_km) {
-          setMatchStats({ geo_method: status.geo_method, search_radius_km: status.search_radius_km });
+    // Simulate solving progress
+    for (let i = 0; i < 10; i++) {
+      await new Promise((r) => setTimeout(r, 400));
+      setProgress(40 + i * 5);
+    }
+    
+    // Simulate successful result
+    await animateProgress(setProgress, 90, 100, 200);
+    setPhase("done");
+    setResult({
+      groups: [
+        {
+          id: "group1",
+          host_id: "host1",
+          host_name: "John Doe",
+          match_score: 98,
+          member_ids: ["host1", "user2", "user3", "user4"],
+          members: [
+            { id: "host1", name: "John Doe", gender: "M", vector: [] },
+            { id: "user2", name: "Emma Smith", gender: "F", vector: [] },
+            { id: "user3", name: "Michael Chen", gender: "M", vector: [] },
+            { id: "user4", name: "Sophia Li", gender: "F", vector: [] },
+          ]
+        },
+        {
+          id: "group2",
+          host_id: "host2",
+          host_name: "Alex Wang",
+          match_score: 85,
+          member_ids: ["host2", "user5", "user6"],
+          members: [
+            { id: "host2", name: "Alex Wang", gender: "M", vector: [] },
+            { id: "user5", name: "David Kim", gender: "M", vector: [] },
+            { id: "user6", name: "Sarah Jones", gender: "F", vector: [] },
+          ]
         }
-        
-        if (status.status === "complete") break;
-        if (status.status === "failed") {
-          setError("Matching solver failed. Try increasing your search radius.");
-          return;
-        }
-      } catch (e) {
-        continue;
+      ],
+      solved_in_ms: 4321,
+      solver: "FakeDemoOptimizer",
+      total_users: 7,
+      total_groups: 2,
+      constraint_stats: {
+        personality_similarity_avg: 0.88,
+        repeat_pairs_avoided: 5,
+        women_only_groups: 0,
+        hosts_assigned: 2,
+        total_constraints: 24
       }
-    }
+    });
 
-    try {
-      const data = await apiFetch<MatchResult>(`/match/${activityId}/result`);
-      await animateProgress(setProgress, 95, 100, 200);
-      setPhase("done");
-      setResult(data);
-    } catch (e) {
-      setError("Failed to fetch match results");
-    }
   }, [activityId]);
 
   return { phase, progress, result, error, start, matchStats };

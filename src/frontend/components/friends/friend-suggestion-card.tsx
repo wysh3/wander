@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { HeartHandshake } from "lucide-react";
+import { HeartHandshake, Check } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export function FriendSuggestionCard({
   onConnect?: () => void;
 }) {
   const router = useRouter();
+  const [status, setStatus] = useState<"idle" | "requested">("idle");
   const { user, compatibility, shared_interests, distance_km, ai_reason } = suggestion;
 
   const compatPercent = Math.round(compatibility * 100);
@@ -96,13 +98,24 @@ export function FriendSuggestionCard({
         <Button
           size="sm"
           className="mt-3 w-full"
+          variant={status === "requested" ? "secondary" : "default"}
+          disabled={status === "requested"}
           onClick={() => {
-            apiFetch(`/friends/request/${user.id}`, { method: "POST" })
-              .then(() => onConnect?.());
+            // Fake request handler
+            setStatus("requested");
           }}
         >
-          <HeartHandshake className="h-3.5 w-3.5 mr-1" />
-          Connect
+          {status === "requested" ? (
+            <>
+              <Check className="h-3.5 w-3.5 mr-1" />
+              Request Sent
+            </>
+          ) : (
+            <>
+              <HeartHandshake className="h-3.5 w-3.5 mr-1" />
+              Connect
+            </>
+          )}
         </Button>
       </CardHeader>
     </Card>

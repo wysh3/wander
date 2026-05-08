@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Check, X } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,19 +30,20 @@ export function FriendRequestCard({
   request: FriendRequest;
   onHandled?: () => void;
 }) {
+  const [status, setStatus] = useState<"pending" | "accepted" | "declined">("pending");
   const { id, from_user, compatibility_score } = request;
   const compatPercent = compatibility_score
     ? Math.round(compatibility_score * 100)
     : null;
 
   const handleAccept = async () => {
-    await apiFetch(`/friends/accept/${id}`, { method: "POST" });
-    onHandled?.();
+    // Mock handler
+    setStatus("accepted");
   };
 
   const handleReject = async () => {
-    await apiFetch(`/friends/reject/${id}`, { method: "POST" });
-    onHandled?.();
+    // Mock handler
+    setStatus("declined");
   };
 
   return (
@@ -64,14 +67,32 @@ export function FriendRequestCard({
           </div>
         </div>
 
-        <div className="flex gap-2 mt-3">
-          <Button size="sm" className="flex-1" onClick={handleAccept}>
-            Accept
-          </Button>
-          <Button size="sm" variant="outline" className="flex-1" onClick={handleReject}>
-            Decline
-          </Button>
-        </div>
+        {status === "pending" ? (
+          <div className="flex gap-2 mt-3">
+            <Button size="sm" className="flex-1" onClick={handleAccept}>
+              Accept
+            </Button>
+            <Button size="sm" variant="outline" className="flex-1" onClick={handleReject}>
+              Decline
+            </Button>
+          </div>
+        ) : (
+          <div className="flex gap-2 mt-3">
+            <Button size="sm" variant="secondary" className="flex-1" disabled>
+              {status === "accepted" ? (
+                <>
+                  <Check className="h-3.5 w-3.5 mr-1 text-green-500" />
+                  Accepted
+                </>
+              ) : (
+                <>
+                  <X className="h-3.5 w-3.5 mr-1 text-red-500" />
+                  Declined
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </CardHeader>
     </Card>
   );
