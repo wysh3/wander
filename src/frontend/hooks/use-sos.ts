@@ -41,7 +41,9 @@ export function useSOS() {
   const connectWS = useCallback(() => {
     if (!accessToken || !user?.id) return;
 
-    const wsUrl = `ws://localhost:8000/api/v1/sos/${user.id}?token=${accessToken}`;
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    const wsBase = apiBase.replace(/^http/, "ws");
+    const wsUrl = `${wsBase}/sos/${user.id}?token=${accessToken}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

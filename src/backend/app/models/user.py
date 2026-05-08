@@ -50,6 +50,7 @@ class User(Base):
 
     # Safety & Privacy
     women_only_mode: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    women_only_preference: Mapped[bool] = mapped_column(Boolean, default=False)
     emergency_contact_name: Mapped[str | None] = mapped_column(String(100))
     emergency_contact_phone: Mapped[str | None] = mapped_column(String(20))
     
@@ -61,10 +62,6 @@ class User(Base):
     live_lng: Mapped[float | None] = mapped_column(Float(10))
     last_active_at: Mapped[datetime | None] = mapped_column(DateTime)
     preferred_radius_km: Mapped[int] = mapped_column(Integer, default=20)
-
-    emergency_contact_name: Mapped[str | None] = mapped_column(String(100))
-    emergency_contact_phone: Mapped[str | None] = mapped_column(String(15))
-    women_only_preference: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Privacy settings
     profile_visibility: Mapped[str] = mapped_column(String(10), default="public")
