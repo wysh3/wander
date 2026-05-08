@@ -15,8 +15,12 @@ async def get_db() -> AsyncSession:
 
 
 async def get_redis() -> aioredis.Redis:
-    async for client in _get_redis():
-        yield client
+    from app.db.redis import _redis_pool
+    if _redis_pool is not None:
+        yield _redis_pool
+    else:
+        async for client in _get_redis():
+            yield client
 
 
 async def get_current_user(
