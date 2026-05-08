@@ -9,23 +9,30 @@ import { useAuthStore } from "@/stores/auth-store";
 export default function VerificationPage() {
   const [loading, setLoading] = useState(false);
   const [verified, setVerified] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const { setUser, user, isAuthenticated } = useAuthStore();
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Auto-redirect if already verified
   useEffect(() => {
-    if (user?.verification_status === "verified") {
+    if (mounted && user?.verification_status === "verified") {
       setVerified(true);
       setTimeout(() => router.push("/onboarding"), 800);
     }
-  }, [user, router]);
+  }, [mounted, user, router]);
 
   // Redirect to signup if not authenticated
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (mounted && !isAuthenticated) {
       router.push("/signup");
     }
-  }, [isAuthenticated, router]);
+  }, [mounted, isAuthenticated, router]);
+
+  if (!mounted) return null;
 
   const verifyDigilocker = async () => {
     setLoading(true);
@@ -179,4 +186,3 @@ export default function VerificationPage() {
     </div>
   );
 }
-
