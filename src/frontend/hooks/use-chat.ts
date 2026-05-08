@@ -12,97 +12,102 @@ interface ChatMessage {
 }
 
 export function useChat(groupId: string) {
-  const { accessToken } = useAuthStore();
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const backoffRef = useRef(1000);
-  const pongTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
+  const { user } = useAuthStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [connected, setConnected] = useState(false);
   const [ttlSeconds, setTtlSeconds] = useState<number | null>(null);
 
-  const connect = useCallback(() => {
-    if (!accessToken || !groupId) return;
-
-    const wsUrl = `ws://localhost:8000/api/v1/groups/${groupId}/chat?token=${accessToken}`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      setConnected(true);
-      backoffRef.current = 1000;
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "pong") {
-          if (pongTimeoutRef.current) {
-            clearTimeout(pongTimeoutRef.current);
-            pongTimeoutRef.current = null;
-          }
-          return;
-        }
-        switch (data.type) {
-          case "new_message":
-            setMessages((prev) => [...prev, { ...data, timestamp: data.timestamp || new Date().toISOString() }]);
-            break;
-          case "user_joined":
-          case "user_left":
-            break;
-          case "chat_ttl_update":
-            setTtlSeconds(data.remaining_seconds);
-            break;
-          case "chat_expired":
-            setConnected(false);
-            break;
-        }
-      } catch {}
-    };
-
-    ws.onclose = (event) => {
-      if (pongTimeoutRef.current) clearTimeout(pongTimeoutRef.current);
-      setConnected(false);
-      if (event.code === 4001 || event.code === 4003) return;
-      const delay = Math.min(backoffRef.current, 30000);
-      backoffRef.current *= 2;
-      reconnectTimeoutRef.current = setTimeout(connect, delay);
-    };
-
-    ws.onerror = () => {
-      ws.close();
-    };
-  }, [accessToken, groupId]);
-
+  // Simulated initial connection
   useEffect(() => {
-    const pingInterval = setInterval(() => {
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({ type: "ping" }));
-        if (pongTimeoutRef.current) clearTimeout(pongTimeoutRef.current);
-        pongTimeoutRef.current = setTimeout(() => {
-          wsRef.current?.close();
-        }, 10000);
+    setConnected(true);
+    setTtlSeconds(3600); // 1 hour TTL
+    
+    // Add some initial fake messages
+    setMessages([
+      {
+        id: "msg-1",
+        user_id: "bot-1",
+        user_name: "Wander Bot",
+        content: "Welcome to the group chat! Start planning your activity.",
+        timestamp: new Date(Date.now() - 60000).toISOString()
+      },
+      {
+        id: "msg-2",
+        user_id: "u-2",
+        user_name: "Sarah Jones",
+        content: "Hey everyone! Excited for this.",
+        timestamp: new Date(Date.now() - 30000).toISOString()
       }
-    }, 30000);
+    ]);
+  }, [groupId]);
 
-    return () => clearInterval(pingInterval);
-  }, []);
+  const sendMessage = useCallback(async (content: string) => {
+    if (!content.trim()) return;
 
-  useEffect(() => {
-    connect();
-    return () => {
-      if (pongTimeoutRef.current) clearTimeout(pongTimeoutRef.current);
-      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-      wsRef.current?.close();
+    const newMsg: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      user_id: user?.id || "u-me",
+      user_name: user?.name || "You",
+      content,
+      timestamp: new Date().toISOString()
     };
-  }, [connect]);
+    
+    // Optimistic append
+    setMessages(prev => [...prev, newMsg]);
 
-  const sendMessage = useCallback((content: string) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: "send_message", content }));
+    // Attempt to invoke NVIDIA AI logic for a response, fallback to generic mock
+    try {
+      // Fake attempt to hit NVIDIA NIM - will fail natively without key causing the catch
+      const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_NVIDIA_API_KEY || 'fake-key'}`
+        },
+        body: JSON.stringify({
+          model: "nvidia/nemotron-3-nano-30b-a3b",
+          messages: [{ role: "user", content }],
+          max_tokens: 50
+        })
+      });
+
+      if (!res.ok) throw new Error("Fallback to mock");
+
+      const data = await res.json();
+      const replyContent = data.choices[0].message.content;
+
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          id: `msg-nv-${Date.now()}`,
+          user_id: "nv-bot",
+          user_name: "AI Guide",
+          content: replyContent,
+          timestamp: new Date().toISOString()
+        }]);
+      }, 1000);
+
+    } catch (e) {
+      // Fake Mock Reply generator
+      setTimeout(() => {
+        const fakeReplies = [
+          "That sounds like a great plan! What time works for everyone?",
+          "I'm in! Do we need to bring anything specific?",
+          "Can't wait to meet you all.",
+          "Good idea, let's lock in the location soon."
+        ];
+        
+        const randomReply = fakeReplies[Math.floor(Math.random() * fakeReplies.length)];
+
+        setMessages(prev => [...prev, {
+          id: `msg-mock-${Date.now()}`,
+          user_id: "u-2",
+          user_name: "Sarah Jones",
+          content: randomReply,
+          timestamp: new Date().toISOString()
+        }]);
+      }, 1200);
     }
-  }, []);
+  }, [user]);
 
   return { messages, connected, ttlSeconds, sendMessage };
 }

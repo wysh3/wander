@@ -260,7 +260,7 @@ export default function ProfilePage() {
         {[
           { label: "Edit Profile", href: "/profile/edit", icon: UserIcon, color: "text-blue-500", bg: "bg-blue-50" },
           { label: "Safety & Emergency", href: "/profile/safety", icon: Shield, color: "text-green-500", bg: "bg-green-50" },
-          { label: "Privacy Settings", href: "/profile/privacy", icon: Sparkles, color: "text-purple-500", bg: "bg-purple-50" },
+          { label: "Privacy Settings", href: "/settings/privacy", icon: Shield, color: "text-purple-500", bg: "bg-purple-50" },
           { label: "Invite & Earn", href: "/profile/support", icon: Gift, color: "text-rose-500", bg: "bg-rose-50" },
           { label: "App Settings", href: "/profile/settings", icon: Settings, color: "text-gray-500", bg: "bg-gray-50" },
         ].map((item) => (

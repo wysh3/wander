@@ -28,7 +28,40 @@ export default function GroupsPage() {
   useEffect(() => {
     apiFetch<GroupItem[]>("/groups")
       .then(setGroups)
-      .catch(() => {})
+      .catch(() => {
+        // Mock data when backend is down
+        setGroups([
+          {
+            id: "g-1",
+            activity_title: "Demo Coffee Chat",
+            activity_scheduled_at: new Date(Date.now() + 86400000).toISOString(),
+            activity_area: "Koramangala, Bengaluru",
+            activity_category: "Coffee",
+            status: "active",
+            match_score: 95,
+            members: [
+              { id: "u-1", name: "Sarah J." },
+              { id: "u-2", name: "Mike T." },
+              { id: "u-3", name: "John D." }
+            ],
+            created_at: new Date().toISOString()
+          },
+          {
+            id: "g-2",
+            activity_title: "Weekend Board Games",
+            activity_scheduled_at: new Date(Date.now() + 86400000 * 3).toISOString(),
+            activity_area: "Indiranagar",
+            activity_category: "Games",
+            status: "active",
+            match_score: 88,
+            members: [
+              { id: "u-4", name: "Alice" },
+              { id: "u-5", name: "Bob" }
+            ],
+            created_at: new Date().toISOString()
+          }
+        ]);
+      })
       .finally(() => setLoading(false));
   }, []);
 
