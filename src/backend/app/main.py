@@ -50,9 +50,11 @@ app = FastAPI(
 cors_origins = settings.cors_origins_list
 logger.info("cors_configuration", origins=cors_origins, environment=settings.ENVIRONMENT)
 
+# TEMPORARY: Allow all origins for debugging
+# TODO: Restrict this after confirming it works
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=["*"],  # Allow all origins temporarily
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
