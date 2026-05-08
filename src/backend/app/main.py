@@ -120,7 +120,7 @@ async def health_check():
     return {"status": "ok", "service": "wander-api"}
 
 
-@app.post("/seed")
+@app.get("/seed")
 async def seed_data():
     from scripts.seed import seed
     await seed()
