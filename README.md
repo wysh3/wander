@@ -12,7 +12,7 @@ It’s not a dating app. It’s not an event directory. It’s not another feed 
 
 ## 💡 What It Actually Does
 
-Instead of swiping on profiles or joining massive 50-person meetups (where nobody talks to each other), Wander uses AI to curate the perfect group chemistry:
+Instead of swiping on profiles or joining massive 50-person meetups (where nobody talks to each other), Wander uses AI to curate the perfect group chemistry:                                           
 
 1. **The Vibe Check (AI Onboarding):** Instead of filling out boring forms, you chat with our AI to figure out your personality, interests, and general "vibe".
 2. **Pick an Activity:** Browse curated, real-world activities happening in your city (e.g., Pottery making, Go-Karting, Board Game cafes).

@@ -1,16 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
-import { Users, Star, Calendar, Activity, ChevronRight } from "lucide-react";
+import { Users, Star, Calendar, Activity, ChevronRight, Plus, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { getActivityImage } from "@/lib/images";
 
 export default function HostDashboardPage() {
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const { data, isLoading } = useQuery<any>({
     queryKey: ["host", "dashboard"],
     queryFn: () => apiFetch("/host/dashboard"),
   });
+
+  const handleCreateEvent = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    // Mock API call
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setShowCreateModal(false);
+      toast.success("Event created successfully! (Mocked)");
+    }, 1000);
+  };
 
   if (isLoading) return <div className="h-[60vh] bg-gray-100 animate-pulse rounded-[32px] mt-4" />;
 
@@ -19,9 +35,17 @@ export default function HostDashboardPage() {
   return (
     <div className="space-y-8 max-w-md mx-auto pt-2 pb-12">
       {/* Header */}
-      <div>
-        <h1 className="text-[32px] font-bold text-[#1e3a5f] leading-tight">Host Dashboard</h1>
-        <p className="text-[15px] font-medium text-[#1e3a5f]/60 mt-1">Your hosted experiences</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-[32px] font-bold text-[#1e3a5f] leading-tight">Host Dashboard</h1>
+          <p className="text-[15px] font-medium text-[#1e3a5f]/60 mt-1">Your hosted experiences</p>
+        </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center justify-center w-12 h-12 bg-[#2cb1bc] text-white rounded-full shadow-lg hover:bg-[#23959e] hover:shadow-xl hover:-translate-y-0.5 transition-all"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
       </div>
 
       {/* Stats Cards */}
@@ -81,6 +105,78 @@ export default function HostDashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Mock Create Event Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity">
+          <div className="bg-white rounded-[32px] w-full max-w-sm overflow-hidden shadow-2xl relative transform transition-all">
+            <div className="p-6 pb-0 flex justify-between items-center">
+              <h2 className="text-[20px] font-bold text-[#1e3a5f]">Create Event</h2>
+              <button 
+                onClick={() => setShowCreateModal(false)}
+                className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors"
+                disabled={isSubmitting}
+              >
+                <X className="w-5 h-5 text-[#1e3a5f]/60" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateEvent} className="p-6 space-y-4">
+              <div>
+                <label className="block text-[12px] font-bold text-[#1e3a5f]/50 uppercase tracking-wide mb-1">Event Title</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="e.g. Sunday Morning Sketching"
+                  className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-[15px] font-medium text-[#1e3a5f] focus:ring-2 focus:ring-[#2cb1bc]/20"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[12px] font-bold text-[#1e3a5f]/50 uppercase tracking-wide mb-1">Date</label>
+                  <input 
+                    type="date" 
+                    required
+                    className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-[15px] font-medium text-[#1e3a5f] focus:ring-2 focus:ring-[#2cb1bc]/20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-bold text-[#1e3a5f]/50 uppercase tracking-wide mb-1">Max Guests</label>
+                  <input 
+                    type="number" 
+                    min="2"
+                    max="10"
+                    defaultValue="6"
+                    required
+                    className="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-[15px] font-medium text-[#1e3a5f] focus:ring-2 focus:ring-[#2cb1bc]/20"
+                  />
+                </div>
+              </div>
+              
+              <div className="pt-2">
+                <button 
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#2cb1bc] hover:bg-[#23959e] text-white rounded-xl py-4 font-bold text-[16px] transition-all flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Event Request"
+                  )}
+                </button>
+                <p className="text-center text-[12px] font-medium text-[#1e3a5f]/40 mt-3">
+                  This will be submitted for Wander approval.
+                </p>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -16,11 +16,17 @@ if "sslmode" in _query:
 _db_url = _db_url.set(drivername="postgresql+asyncpg", query=_query)
 
 
+from sqlalchemy import text
+
 async def seed():
     engine = create_async_engine(_db_url)
     async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with async_session() as session:
+        # Clear existing tables first
+        await session.execute(text("TRUNCATE TABLE group_members, friend_connections, groups, activities, hosts, venues, users RESTART IDENTITY CASCADE;"))
+        await session.commit()
+
         # ── Hosts (5) ──────────────────────────────────────────────────────
         host_users = [
             User(supabase_uid=f"host_{i}", phone=f"+91999900000{i}", name=name,
@@ -211,14 +217,7 @@ async def seed():
             # ═══════════════════════════════════════════════════════════════
             # BAND 3: WITHIN YOUR RADIUS (10–20 km from Devanahalli)
             # ═══════════════════════════════════════════════════════════════
-            Activity(title="Hebbal Lake Cleanup & Walk",
-                     description="Community lake cleanup followed by a 2 km walking meditation.",
-                     category="social_good", area="Hebbal",
-                     lat=13.0358, lng=77.5970, venue_id=venues[6].id,
-                     scheduled_at=datetime.utcnow() + timedelta(days=2, hours=7),
-                     group_size_min=6, group_size_max=12, max_groups=3,
-                     host_ids=[host_users[0].id], status="open",
-                     tags=["volunteering", "environment", "lake", "walking", "social_good"]),
+
             Activity(title="Pottery Workshop — Yelahanka",
                      description="Learn wheel pottery from a local artisan. Take your creation home!",
                      category="skill", area="Yelahanka",
@@ -295,22 +294,8 @@ async def seed():
                      group_size_min=6, group_size_max=10, max_groups=2,
                      host_ids=[host_users[0].id], status="open",
                      tags=["heritage", "walking", "history", "outdoors", "exploring"]),
-            Activity(title="Photography Walk — Chickpet",
-                     description="Street photography in Old Bangalore. Vintage markets, narrow lanes.",
-                     category="skill", area="MG Road",
-                     lat=12.9716, lng=77.6071,
-                     scheduled_at=datetime.utcnow() + timedelta(days=6, hours=7),
-                     group_size_min=4, group_size_max=6, max_groups=1,
-                     host_ids=[host_users[0].id], status="open",
-                     tags=["photography", "walking", "street_photography", "creativity", "exploring"]),
-            Activity(title="Saree + Filter Coffee Walk",
-                     description="Wear a saree, walk through Indiranagar, drink filter coffee. Women only 🌸",
-                     category="chaotic", area="Indiranagar",
-                     lat=12.9716, lng=77.6411,
-                     scheduled_at=datetime.utcnow() + timedelta(days=8, hours=16),
-                     group_size_min=6, group_size_max=10, max_groups=2, women_only=True,
-                     host_ids=[host_users[1].id], status="open",
-                     tags=["walking", "social", "coffee", "fashion", "culture"]),
+
+
 
             # ═══════════════════════════════════════════════════════════════
             # BAND 5: FARTHER AWAY (30+ km from Devanahalli)
@@ -325,16 +310,7 @@ async def seed():
                      tags=["cycling", "fitness", "outdoors", "evening", "sports"]),
             
             # --- New Dashboard Events ---
-            Activity(title="Cubbon Park Calisthenics Jam",
-                     description="Learn the basics of calisthenics with bodyweight exercises at the Cubbon Park open gym.",
-                     category="physical", area="Cubbon Park",
-                     lat=12.9716, lng=77.5946, venue_id=venues[2].id,
-                     scheduled_at=datetime.utcnow() + timedelta(days=3, hours=6),
-                     group_size_min=4, group_size_max=12, max_groups=3,
-                     host_ids=[host_users[2].id], status="open",
-                     is_local_event=True,
-                     cover_photo_url="https://images.unsplash.com/photo-1599058945522-28d584b6f4ff?w=800&q=80",
-                     tags=["gym", "fitness", "calisthenics", "training", "workout"]),
+
             
             Activity(title="TCS World 10k Marathon Training",
                      description="Pre-marathon group run around Kanteerava Stadium. Pacing strategies and hydration prep.",
@@ -385,14 +361,7 @@ async def seed():
                      group_size_min=4, group_size_max=6, max_groups=2,
                      host_ids=[host_users[3].id], status="open",
                      tags=["meditation", "mindfulness", "journaling", "wellness", "mental_health"]),
-            Activity(title="Wall Art + Mural Painting — HSR",
-                     description="Beautify a community wall together. All art supplies provided.",
-                     category="social_good", area="HSR Layout",
-                     lat=12.9121, lng=77.6446,
-                     scheduled_at=datetime.utcnow() + timedelta(days=5, hours=9),
-                     group_size_min=4, group_size_max=8, max_groups=2,
-                     host_ids=[host_users[1].id], status="open",
-                     tags=["painting", "creativity", "art", "outdoors", "community"]),
+
             Activity(title="Tech Meetup — Electronic City",
                      description="Casual tech talk + networking. AI, startups, and snacks.",
                      category="skill", area="Electronic City",

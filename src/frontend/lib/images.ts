@@ -10,29 +10,45 @@ export const categoryImages: Record<string, string> = {
 
 export const exactActivityImages: Record<string, string> = {
   "Nandi Hills Sunrise Trek": "/images/nandi_hills.png",
-  "Pottery + Chai at Lahe Lahe": "https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=1200&q=80",
+  "Pottery + Chai at Lahe Lahe": "/images/pottery_chai.png",
   "Cubbon Park Cleanup Drive": "/images/cubbon_park.png",
-  "Board Game Night": "https://images.unsplash.com/photo-1632501641765-e568d28b0015?auto=format&fit=crop&w=1200&q=80",
-  "Sunday Morning Yoga": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1200&q=80",
-  "Koramangala Food Walk": "https://images.unsplash.com/photo-1543826173-70651703c5a4?auto=format&fit=crop&w=1200&q=80",
-  "Midnight Chaos Bowling": "https://images.unsplash.com/photo-1506520779770-f4cc5e2e8e9e?auto=format&fit=crop&w=1200&q=80",
-  "Slow Reading Club": "https://images.unsplash.com/photo-1491841550275-ad7854e35ca6?auto=format&fit=crop&w=1200&q=80",
+  "Board Game Night": "/images/board_games.png",
+  "Sunday Morning Yoga": "/images/yoga_hebbal.png",
+  "Koramangala Food Walk": "/images/food_walk.png",
+  "Midnight Chaos Bowling": "/images/bowling.png",
+  "Slow Reading Club": "/images/reading_club.png",
   "Lalbagh Heritage Walk": "/images/lalbagh.png",
   "Evening Cycling — Outer Ring": "/images/evening_cycling.png",
-  "Wall Art + Mural Painting": "https://images.unsplash.com/photo-1499892477393-f675706cbe6e?auto=format&fit=crop&w=1200&q=80",
-  "Photography Walk — Chickpet": "https://images.unsplash.com/photo-1517409088656-7ed8d5760814?auto=format&fit=crop&w=1200&q=80",
-  "Dumbbell + Brunch": "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=1200&q=80",
-  "Mindfulness + Meditation": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=1200&q=80",
-  "Saree + Filter Coffee Walk": "https://images.unsplash.com/photo-1515005660851-40ea468da2e5?auto=format&fit=crop&w=1200&q=80",
+  "Dumbbell + Brunch": "/images/dumbbell_brunch.png",
+  "Mindfulness + Meditation": "/images/meditation.png",
   "Trek to Savandurga": "https://images.unsplash.com/photo-1522069169874-c58ec4b76be1?auto=format&fit=crop&w=1200&q=80",
-  "Board Games Meetup": "https://images.unsplash.com/photo-1610890716175-3ad0460c4105?auto=format&fit=crop&w=1200&q=80",
+  "Board Games Meetup": "/images/board_games.png",
   "Ulsoor Lake Cleanup": "https://images.unsplash.com/photo-1563812837330-81f148003f0b?auto=format&fit=crop&w=1200&q=80",
+  "TCS World 10k Marathon Training": "/images/marathon_training.png",
+  "Hackverse-2k26 Code-athon": "/images/hackverse.png",
+  "Robin Hood Army Food Drive": "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&q=80",
+  "Devanahalli Fort Heritage Walk": "/images/devanahalli_fort.png",
+  "Morning Chai at Devanahalli Local": "/images/morning_chai.png",
+  "Sunrise Walk — Devanahalli Farms": "/images/sunrise_walk.png",
+  "Birdwatching at Yelahanka Lake": "/images/birdwatching.png",
+  "Cycling to Nandi Hills Base": "/images/cycling_nandi.png",
+  "Tech Meetup — Electronic City": "/images/tech_meetup.png",
+  "Electronic City Lake Walk": "/images/lake_walk.png",
 };
 
-export function getActivityImage(title: string | null, category: string | null): string {
+export function getActivityImage(title: string | null, category: string | null, coverPhotoUrl?: string | null): string {
+  if (coverPhotoUrl) return coverPhotoUrl;
+
   if (title && exactActivityImages[title]) {
     return exactActivityImages[title];
   }
+  
+  // Try partial matching if exact match fails
+  if (title) {
+    const entry = Object.entries(exactActivityImages).find(([key]) => title.includes(key) || key.includes(title));
+    if (entry) return entry[1];
+  }
+
   if (category && categoryImages[category]) {
     return categoryImages[category];
   }
