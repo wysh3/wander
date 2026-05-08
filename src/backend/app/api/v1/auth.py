@@ -26,24 +26,28 @@ async def send_otp(
     db: AsyncSession = Depends(get_db),
     redis: aioredis.Redis = Depends(get_redis),
 ):
-    settings = get_settings()
-    if settings.ENVIRONMENT == "development":
-        otp = "123456"
-    else:
-        otp = generate_otp()
+    try:
+        settings = get_settings()
+        if settings.ENVIRONMENT == "development":
+            otp = "123456"
+        else:
+            otp = generate_otp()
 
-    hashed = hash_otp(otp)
-    logger.info("otp_generated", phone=body.phone, otp=otp)
+        hashed = hash_otp(otp)
+        logger.info("otp_generated", phone=body.phone, otp=otp)
 
-    await redis.setex(f"auth:{body.phone}:otp", 300, hashed)
-    await redis.setex(f"auth:{body.phone}:attempts", 900, 0)
+        await redis.setex(f"auth:{body.phone}:otp", 300, hashed)
+        await redis.setex(f"auth:{body.phone}:attempts", 900, 0)
 
-    result = await db.execute(select(User).where(User.phone == body.phone))
-    user = result.scalar_one_or_none()
-    if user:
-        await redis.setex(f"auth:{body.phone}:user_id", 300, str(user.id))
+        result = await db.execute(select(User).where(User.phone == body.phone))
+        user = result.scalar_one_or_none()
+        if user:
+            await redis.setex(f"auth:{body.phone}:user_id", 300, str(user.id))
 
-    return SendOTPResponse(expires_in=300)
+        return SendOTPResponse(expires_in=300)
+    except Exception as e:
+        logger.error("send_otp_failed", error=str(e), type=type(e).__name__)
+        raise
 
 
 @router.post("/verify-otp", response_model=TokenResponse)
