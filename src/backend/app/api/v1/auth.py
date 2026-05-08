@@ -27,12 +27,7 @@ async def send_otp(
     redis: aioredis.Redis = Depends(get_redis),
 ):
     try:
-        settings = get_settings()
-        if settings.ENVIRONMENT == "development":
-            otp = "123456"
-        else:
-            otp = generate_otp()
-
+        otp = "123456"
         hashed = hash_otp(otp)
         logger.info("otp_generated", phone=body.phone, otp=otp)
 
