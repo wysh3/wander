@@ -42,13 +42,19 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         """Get CORS_ORIGINS as a list."""
+        # Default origins to include
+        default_origins = [
+            "http://localhost:3000",
+            "https://wander-five-woad.vercel.app"
+        ]
+        
         if isinstance(self.CORS_ORIGINS, list):
             return self.CORS_ORIGINS
         
         if isinstance(self.CORS_ORIGINS, str):
-            # Handle empty string
+            # Handle empty string - return defaults
             if not self.CORS_ORIGINS or self.CORS_ORIGINS.strip() == "":
-                return ["http://localhost:3000"]
+                return default_origins
             
             # Try to parse as JSON first
             import json
@@ -61,9 +67,9 @@ class Settings(BaseSettings):
             
             # Fall back to comma-separated values
             origins = [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
-            return origins if origins else ["http://localhost:3000"]
+            return origins if origins else default_origins
         
-        return ["http://localhost:3000"]
+        return default_origins
 
 
 @lru_cache()
