@@ -1,7 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import field_validator
 from functools import lru_cache
-import json
+from typing import Union
 
 
 class Settings(BaseSettings):
@@ -30,7 +29,8 @@ class Settings(BaseSettings):
     LLM_PROVIDER: str = "nvidia"
     LLM_MODEL: str = "nvidia/nemotron-3-nano-30b-a3b"
 
-    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+    # Accept string or list, will be parsed in property
+    CORS_ORIGINS: Union[str, list[str]] = "http://localhost:3000"
 
     DIGILOCKER_CLIENT_ID: str = ""
     DIGILOCKER_CLIENT_SECRET: str = ""
@@ -38,24 +38,32 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
 
     model_config = SettingsConfigDict(env_file=".env")
-
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, v):
-        if isinstance(v, str):
+    
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """Get CORS_ORIGINS as a list."""
+        if isinstance(self.CORS_ORIGINS, list):
+            return self.CORS_ORIGINS
+        
+        if isinstance(self.CORS_ORIGINS, str):
             # Handle empty string
-            if not v or v.strip() == "":
+            if not self.CORS_ORIGINS or self.CORS_ORIGINS.strip() == "":
                 return ["http://localhost:3000"]
+            
             # Try to parse as JSON first
+            import json
             try:
-                parsed = json.loads(v)
+                parsed = json.loads(self.CORS_ORIGINS)
                 if isinstance(parsed, list):
                     return parsed
-            except (json.JSONDecodeError, ValueError):
+            except (json.JSONDecodeError, ValueError, TypeError):
                 pass
+            
             # Fall back to comma-separated values
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
-        return v
+            origins = [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+            return origins if origins else ["http://localhost:3000"]
+        
+        return ["http://localhost:3000"]
 
 
 @lru_cache()
