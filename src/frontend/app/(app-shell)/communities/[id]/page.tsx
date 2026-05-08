@@ -45,7 +45,7 @@ export default function CommunityDetailPage() {
   };
 
   const members: MemberItem[] = qMembers || [
-    { id: "cm1", user_id: "u1", role: "founder", joined_at: new Date().toISOString(), user: { name: "Demo Admin", vibe: "Chill", home_area: "Downtown" } }
+    { id: "cm1", user_id: "u1", role: "founder", joined_at: new Date().toISOString(), name: "Demo Admin" }
   ];
 
   const joinMutation = useMutation({
