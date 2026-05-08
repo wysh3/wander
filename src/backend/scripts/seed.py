@@ -1,14 +1,23 @@
 import asyncio
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.engine.url import make_url
 from app.models import User, Host, Activity, Group, GroupMember, Venue, FriendConnection
 from app.config import get_settings
+from sqlalchemy import text
 
 settings = get_settings()
 
+_db_url = make_url(settings.DATABASE_URL)
+_query = dict(_db_url.query)
+if "sslmode" in _query:
+    sslmode_val = _query.pop("sslmode")
+    _query["ssl"] = sslmode_val
+_db_url = _db_url.set(drivername="postgresql+asyncpg", query=_query)
+
 
 async def seed():
-    engine = create_async_engine(settings.DATABASE_URL)
+    engine = create_async_engine(_db_url)
     async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with async_session() as session:

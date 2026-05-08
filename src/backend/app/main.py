@@ -120,6 +120,13 @@ async def health_check():
     return {"status": "ok", "service": "wander-api"}
 
 
+@app.post("/seed")
+async def seed_data():
+    from scripts.seed import seed
+    await seed()
+    return {"status": "ok", "message": "Database seeded successfully"}
+
+
 app.include_router(v1_router, prefix="/api/v1")
 
 # Mount static files for image uploads
